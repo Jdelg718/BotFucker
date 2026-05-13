@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      :root {
+        --paper: #f8f4ec;
+        --surface: #ffffff;
+        --orange: #f7931a;
+        --orange-light: #ffb23a;
+        --orange-dark: #a94700;
+        --blue: #1da9ff;
+        --blue-dark: #0b2f4f;
+        --blue-light: #ddf2ff;
+        --ink: #101820;
+        --danger: #e84a2a;
+        --green: #35c772;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 10% 8%, rgba(29,169,255,.26), transparent 430px),
+          radial-gradient(circle at 86% 10%, rgba(247,147,26,.30), transparent 470px),
+          linear-gradient(135deg, rgba(255,255,255,.72) 0 25%, transparent 25% 50%, rgba(255,255,255,.42) 50% 75%, transparent 75%) 0 0 / 58px 58px,
+          var(--paper);
+      }
+      .clip { position: absolute; }
+      .stage-label {
+        left: 70px; top: 54px;
+        padding: 16px 24px;
+        border: 4px solid var(--ink);
+        border-radius: 999px;
+        background: white;
+        box-shadow: 0 9px 0 var(--blue-dark);
+        font-size: 28px;
+        font-weight: 1000;
+        letter-spacing: -.04em;
+        text-transform: uppercase;
+      }
+      .brand-dot {
+        display: inline-grid; place-items: center;
+        width: 50px; height: 50px; margin-right: 12px;
+        border: 4px solid var(--ink); border-radius: 50%;
+        background: var(--orange);
+        box-shadow: inset 0 -6px 0 var(--orange-dark);
+      }
+      .hero-img {
+        right: 76px; top: 155px;
+        width: 690px;
+        border: 6px solid var(--ink);
+        border-radius: 42px;
+        background: var(--blue-light);
+        box-shadow: 18px 18px 0 var(--orange-dark), 0 42px 90px rgba(11,47,79,.30);
+        overflow: hidden;
+        transform: rotate(2deg);
+      }
+      .hero-img img { display: block; width: 100%; }
+      .headline {
+        left: 84px; top: 170px;
+        width: 1050px;
+        font-size: 128px;
+        line-height: .84;
+        font-weight: 1000;
+        letter-spacing: -.095em;
+        text-transform: uppercase;
+      }
+      .headline .orange { color: var(--orange-dark); text-shadow: 5px 5px 0 rgba(16,24,32,.22); }
+      .headline .blue { color: #006ca8; text-shadow: 5px 5px 0 rgba(16,24,32,.18); }
+      .subline {
+        left: 92px; top: 468px;
+        width: 760px;
+        padding: 22px 26px;
+        border: 5px solid var(--ink);
+        border-radius: 24px 24px 24px 8px;
+        background: white;
+        box-shadow: 0 10px 0 rgba(16,24,32,.26);
+        font-size: 36px;
+        line-height: 1.18;
+        font-weight: 850;
+      }
+      .spam-card {
+        width: 410px;
+        min-height: 116px;
+        padding: 24px;
+        border: 5px solid var(--ink);
+        border-radius: 22px;
+        background: white;
+        box-shadow: 12px 12px 0 rgba(11,47,79,.28);
+      }
+      .spam-card strong { display: block; font-size: 30px; margin-bottom: 6px; }
+      .spam-card span { color: #5f6f7c; font-size: 22px; font-weight: 700; }
+      .spam-card.one { left: 1450px; top: 118px; transform: rotate(8deg); }
+      .spam-card.two { left: 1250px; top: 418px; transform: rotate(-7deg); }
+      .spam-card.three { left: 1370px; top: 720px; transform: rotate(5deg); }
+      .stamp {
+        padding: 12px 18px;
+        border: 5px solid var(--ink);
+        border-radius: 18px;
+        background: var(--danger);
+        color: white;
+        font-size: 38px;
+        font-weight: 1000;
+        text-transform: uppercase;
+        box-shadow: 8px 8px 0 var(--ink);
+      }
+      .stamp.ai { left: 1180px; top: 285px; transform: rotate(-12deg); }
+      .stamp.crm { left: 1035px; top: 625px; transform: rotate(9deg); background: var(--orange); color: var(--ink); }
+      .panel {
+        width: 520px;
+        padding: 34px;
+        border: 5px solid var(--ink);
+        border-radius: 30px;
+        background: white;
+        box-shadow: 0 14px 0 var(--blue-dark);
+      }
+      .panel h2 { font-size: 48px; line-height: .95; letter-spacing: -.06em; margin: 0 0 18px; text-transform: uppercase; }
+      .panel p { font-size: 27px; line-height: 1.22; margin: 0; color: #4f6270; font-weight: 750; }
+      .panel.local { left: 118px; top: 210px; background: linear-gradient(135deg, #fff, var(--blue-light)); }
+      .panel.review { left: 700px; top: 210px; background: linear-gradient(135deg, #fff, #fff7e8); }
+      .panel.bridge { left: 1280px; top: 210px; background: linear-gradient(135deg, #fff, #ffe3dc); }
+      .icon {
+        display: inline-grid; place-items: center;
+        width: 82px; height: 82px; margin-bottom: 20px;
+        border: 5px solid var(--ink); border-radius: 24px;
+        background: var(--orange);
+        font-size: 46px;
+        box-shadow: inset 0 -8px 0 var(--orange-dark);
+      }
+      .safety {
+        left: 130px; top: 645px;
+        width: 1660px;
+        padding: 34px 42px;
+        border: 6px solid var(--ink);
+        border-radius: 34px;
+        background: linear-gradient(135deg, #ffffff, #eaf6ff 55%, #fff2d8);
+        box-shadow: 0 16px 0 var(--orange-dark);
+      }
+      .safety h2 { margin: 0 0 18px; font-size: 72px; line-height: .9; letter-spacing: -.07em; text-transform: uppercase; }
+      .pill-row { display: flex; gap: 18px; }
+      .pill {
+        padding: 18px 24px;
+        border: 4px solid var(--ink);
+        border-radius: 999px;
+        background: #ffe3dc;
+        color: #7f1d12;
+        font-size: 30px;
+        font-weight: 1000;
+        box-shadow: 0 8px 0 rgba(16,24,32,.22);
+      }
+      .final {
+        inset: 0;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        background:
+          radial-gradient(circle at 50% 52%, rgba(247,147,26,.38), transparent 500px),
+          radial-gradient(circle at 50% 55%, rgba(29,169,255,.24), transparent 720px),
+          var(--paper);
+      }
+      .final-card {
+        width: 1350px;
+        padding: 68px;
+        border: 8px solid var(--ink);
+        border-radius: 54px;
+        background: white;
+        box-shadow: 24px 24px 0 var(--blue-dark), -18px -18px 0 var(--orange);
+      }
+      .final h2 { margin: 0; font-size: 142px; line-height: .82; letter-spacing: -.09em; text-transform: uppercase; }
+      .final p { margin: 30px 0 0; font-size: 42px; font-weight: 900; color: #4f6270; }
+      .burst {
+        width: 520px; height: 520px;
+        border-radius: 50%;
+        background: repeating-conic-gradient(from 6deg, rgba(247,147,26,.45) 0 8deg, transparent 8deg 18deg);
+        opacity: .9;
+      }
+      .burst.one { left: 1040px; top: 20px; }
+      .burst.two { left: -150px; top: 610px; transform: rotate(15deg); }
+      .dashboard {
+        left: 70px; top: 595px; width: 1040px; height: 310px;
+        border: 6px solid var(--ink); border-radius: 32px;
+        background: white; box-shadow: 14px 14px 0 var(--blue-dark);
+        padding: 28px;
+      }
+      .dash-row { height: 58px; margin-bottom: 18px; border: 4px solid var(--ink); border-radius: 16px; background: #fff7e8; display: flex; align-items: center; padding: 0 18px; font-size: 22px; font-weight: 950; }
+      .dash-row:nth-child(2) { background: #eaf6ff; }
+      .dash-row:nth-child(3) { background: #dbffe9; }
+      .badge { margin-left: auto; background: #ffffff; color: #101820; border: 3px solid var(--ink); border-radius: 999px; padding: 6px 12px; font-size: 18px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="35" data-width="1920" data-height="1080">
+      <div id="bg-burst-orange" class="clip burst one" data-start="0" data-duration="35" data-track-index="0"></div>
+      <div id="bg-burst-blue" class="clip burst two" data-start="0" data-duration="35" data-track-index="18"></div>
+
+      <div id="stage-label" class="clip stage-label" data-start="0" data-duration="35" data-track-index="1"><span class="brand-dot">✉</span> Inbox Defense Command Center</div>
+
+      <div id="hook-headline" class="clip headline hook" data-start="0" data-duration="9" data-track-index="2">Your inbox is <span class="orange">under attack</span></div>
+      <div id="hook-subline" class="clip subline hook" data-start="1.2" data-duration="8" data-track-index="3">Cold pitches, AI slop, and CRM zombies keep crawling back.</div>
+
+      <div id="spam-card-quick-call" class="clip spam-card one problem" data-start="3" data-duration="10" data-track-index="4"><strong>quick call?</strong><span>“Thoughts on scaling your growth engine?”</span></div>
+      <div id="spam-card-followup" class="clip spam-card two problem" data-start="4.1" data-duration="9" data-track-index="5"><strong>following up</strong><span>because the robot has no shame.</span></div>
+      <div id="spam-card-personalized" class="clip spam-card three problem" data-start="5.2" data-duration="8" data-track-index="6"><strong>personalized</strong><span>Dear [First Name], nailed it.</span></div>
+      <div id="stamp-ai-slop" class="clip stamp ai problem" data-start="6.3" data-duration="7" data-track-index="7">AI SLOP</div>
+      <div id="stamp-crm-loop" class="clip stamp crm problem" data-start="7.1" data-duration="6" data-track-index="8">CRM LOOP</div>
+
+      <figure id="hero-art" class="clip hero-img reveal" data-start="9" data-duration="15" data-track-index="9"><img src="assets/botfucker-ff2k-hero.png" alt="BotFucker FF2K hero art crushing a spam bot" /></figure>
+      <div id="product-title" class="clip headline reveal-title" data-start="9.5" data-duration="10" data-track-index="10"><span class="blue">BotFucker</span></div>
+      <div id="product-copy" class="clip subline reveal-copy" data-start="10.4" data-duration="10" data-track-index="11">Local-first filtering for people who would rather not hand the mailbox keys to a half-baked robot.</div>
+
+      <div id="panel-classify-locally" class="clip panel local how" data-start="15" data-duration="10" data-track-index="12"><div class="icon">⌁</div><h2>Classify locally</h2><p>Structured reasons. Sender history. Strike levels. No mystery cloud ritual.</p></div>
+      <div id="panel-review-queue" class="clip panel review how" data-start="16.2" data-duration="10" data-track-index="13"><div class="icon">✓</div><h2>Review the queue</h2><p>Approve, dismiss, whitelist, blacklist — all inside the Battle Board.</p></div>
+      <div id="panel-bridge-later" class="clip panel bridge how" data-start="17.4" data-duration="10" data-track-index="14"><div class="icon">🔒</div><h2>Bridge later</h2><p>Provider actions stay outside the cockpit until the explicit export phase.</p></div>
+
+      <div id="dashboard-preview" class="clip dashboard how" data-start="18.8" data-duration="8" data-track-index="15">
+        <div class="dash-row">AI-generated sales pitch <span class="badge">REVIEW</span></div>
+        <div class="dash-row">Repeated follow-up loop <span class="badge">STRIKE 2</span></div>
+        <div class="dash-row">Trusted sender <span class="badge">SAFE</span></div>
+      </div>
+
+      <section id="safety-rails" class="clip safety rails" data-start="23" data-duration="8" data-track-index="16">
+        <h2>Safety rails stay locked.</h2>
+        <div class="pill-row">
+          <div class="pill">No live sends</div>
+          <div class="pill">No deletes</div>
+          <div class="pill">No OAuth in core</div>
+          <div class="pill">Human review first</div>
+        </div>
+      </section>
+
+      <section id="final-cta" class="clip final" data-start="30" data-duration="5" data-track-index="17">
+        <div class="final-card">
+          <h2>Filter the bot noise.</h2>
+          <p>Review first. Automate later.</p>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      tl.from('.stage-label', { y: -120, opacity: 0, duration: .55, ease: 'back.out(1.8)' }, 0)
+        .from('.burst', { scale: .2, opacity: 0, duration: 1.2, stagger: .15, ease: 'power3.out' }, 0)
+        .from('.hook', { x: -130, opacity: 0, duration: .8, stagger: .18, ease: 'power4.out' }, .2)
+        .from('.problem', { y: -140, x: 120, rotation: 18, opacity: 0, duration: .72, stagger: .22, ease: 'back.out(1.5)' }, 3)
+        .to('.problem', { x: '-=70', y: '+=26', rotation: '+=5', duration: 2.5, stagger: .12, ease: 'sine.inOut' }, 7)
+        .to('.hook, .problem', { opacity: 0, scale: .92, duration: .55, stagger: .04, ease: 'power2.in' }, 8.55)
+        .from('.reveal', { x: 780, rotation: 18, opacity: 0, duration: .9, ease: 'back.out(1.2)' }, 9)
+        .from('.reveal-title', { scale: .62, opacity: 0, duration: .75, ease: 'back.out(1.5)' }, 9.35)
+        .from('.reveal-copy', { x: -110, opacity: 0, duration: .7, ease: 'power3.out' }, 10.15)
+        .to('.hero-img', { y: -18, rotation: -1.5, duration: 2.1, repeat: 2, yoyo: true, ease: 'sine.inOut' }, 10)
+        .to('.reveal-title, .reveal-copy', { opacity: 0, x: -100, duration: .5, ease: 'power2.in' }, 14.5)
+        .from('.how', { y: 120, opacity: 0, duration: .75, stagger: .18, ease: 'back.out(1.25)' }, 15)
+        .to('.hero-img', { width: 420, top: 610, right: 90, rotation: 3, duration: .8, ease: 'power3.inOut' }, 15)
+        .from('.dash-row', { opacity: 0, duration: .45, stagger: .16, ease: 'power3.out' }, 19)
+        .to('.how', { opacity: 0, y: -70, duration: .55, stagger: .05, ease: 'power2.in' }, 22.4)
+        .from('.rails', { scale: .75, y: 160, opacity: 0, duration: .85, ease: 'back.out(1.35)' }, 23)
+        .from('.pill', { y: 50, opacity: 0, duration: .45, stagger: .12, ease: 'back.out(1.4)' }, 23.55)
+        .to('.hero-img', { x: 80, y: -25, rotation: -2, duration: 2.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, 24)
+        .to('.rails, .hero-img', { opacity: 0, scale: .92, duration: .55, ease: 'power2.in' }, 29.45)
+        .from('.final-card', { scale: .55, rotation: -4, opacity: 0, duration: .75, ease: 'back.out(1.45)' }, 30)
+        .to('.final-card', { scale: 1.025, duration: 1.1, yoyo: true, repeat: 2, ease: 'sine.inOut' }, 31);
+      window.__timelines['main'] = tl;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+Your inbox is under attack.
+Cold pitches, fake personalization, and CRM zombies keep crawling back.
+
+BotFucker is local-first inbox defense.
+It flags suspicious outreach, shows the reasons, and keeps the human in control.
+
+Review it in the Battle Board. Approve, dismiss, whitelist, or blacklist.
+
+No live sends. No deletes. No OAuth in the core.
+
+Filter the bot noise. Review first. Automate later.

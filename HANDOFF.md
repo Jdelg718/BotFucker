@@ -4,10 +4,11 @@
 
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
-- Latest merged milestone: PR #8 — provider auth boundary plan
+- Latest merged milestone: FF2K branded UI plus HyperFrames animated explainer
 - Current working branch: `main`
 - Current PR target: none; next recommended branch is `phase-8-approved-action-export`
 - Current local demo target: pull repo into Kodex/Codex and demonstrate the local review cockpit on `127.0.0.1:8765`
+- Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
 
 ## What BotFucker Is
 
@@ -41,6 +42,7 @@ botfucker/review_cli.py       # durable local review CLI
 botfucker/webhook_contract.py # n8n/webhook payload sanitizer/import adapter
 botfucker/local_ui.py         # local browser review UI server
 web/                          # static UI assets
+promo/botfucker-animated-explainer/ # HyperFrames FF2K product explainer source + rendered cut
 tests/                        # fake-email-only tests
 ```
 
@@ -160,6 +162,28 @@ Say explicitly:
 - the browser UI cannot send/move/delete email
 - n8n is the planned credential buffer
 - next build is approved-action export, not live provider mutation
+
+## Animated Explainer Demo
+
+A branded FF2K/HyperFrames explainer now lives in:
+
+```text
+promo/botfucker-animated-explainer/
+```
+
+Current narrated render:
+
+```text
+promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4
+```
+
+Validate from the promo folder:
+
+```bash
+npm run check
+```
+
+The video copy must keep the current safety truth: local-first review, no live sends, no deletes, no OAuth in core, provider bridge later.
 
 ## Completed Phases
 

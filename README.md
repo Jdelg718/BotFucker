@@ -98,6 +98,30 @@ http://127.0.0.1:8765/
 
 This demonstrates the local cockpit, durable review queue, sender history, and audit trail without touching a live inbox. Which is the sane order. Weird how that keeps coming up.
 
+## Animated Explainer
+
+A branded FF2K/HyperFrames product explainer lives in:
+
+```text
+promo/botfucker-animated-explainer/
+```
+
+Current rendered cut:
+
+```text
+promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4
+```
+
+It uses the same FF2K hero art and local-first safety copy as the browser cockpit: no live sends, no deletes, no OAuth in the BotFucker core, human review first, provider bridge later.
+
+Preview/check/render from that folder:
+
+```bash
+npm run dev
+npm run check
+npm run render
+```
+
 ## Optional Legacy IMAP/SMTP Setup
 
 Only configure these environment variables if you are intentionally using the older `outreach_filter.py` IMAP/SMTP path. They are not needed for the local review UI, n8n import workflow, or current provider-boundary design.

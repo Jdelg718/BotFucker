@@ -9,3 +9,11 @@ botfucker_history.sqlite3
 .DS_Store
 .vscode/
 .idea/
+
+# Local agent/plugin caches inside promo projects
+promo/**/.agents/
+
+# HyperFrames generated intermediates; keep explicitly staged final artifacts only
+promo/**/renders/frames/
+promo/**/renders/*_narrated-v*.mp4
+promo/**/renders/*_[0-9][0-9][0-9][0-9]-*.mp4

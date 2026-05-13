@@ -26,7 +26,9 @@ Merged through PR #8:
 - normalized n8n/webhook import contract
 - n8n workflow package and mapping guide
 - provider auth boundary plan
-- tests for classifier/history/safety/review/webhook/docs behavior
+- FF2K-branded local browser UI and hero art
+- HyperFrames animated/narrated product explainer under `promo/botfucker-animated-explainer/`
+- tests for classifier/history/safety/review/webhook/docs/branding behavior
 
 The repo is ready to pull locally into Kodex/Codex and demonstrate the local cockpit without connecting to any live mail provider.
 
