@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BotFucker Local Review UI</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Phase 2 · Local skeleton · sample data only</p>
+        <h1>BotFucker Review Queue</h1>
+        <p class="tagline">Human-approved mock actions for wrangling fake sales gremlins before provider auth exists.</p>
+      </div>
+      <div class="status-card">
+        <span class="pill safe">Human approval enabled</span>
+        <span class="pill disabled">YOLO visible, disabled</span>
+        <span class="pill neutral">Provider auth coming later</span>
+      </div>
+    </header>
+
+    <main>
+      <section id="dashboard" class="panel">
+        <div class="section-heading">
+          <h2>Dashboard</h2>
+          <p>Local-only sample metrics. No mailbox is connected.</p>
+        </div>
+        <div id="metrics" class="metrics"></div>
+      </section>
+
+      <section id="review" class="panel">
+        <div class="section-heading">
+          <h2>Review Queue</h2>
+          <p>Actions below are mock simulations only: no email send, move, delete, whitelist, or blacklist calls.</p>
+        </div>
+        <div id="queue" class="queue"></div>
+      </section>
+
+      <section id="senders" class="panel">
+        <div class="section-heading">
+          <h2>Sender History</h2>
+          <p>Derived from deterministic sample messages and in-memory audit events.</p>
+        </div>
+        <div id="sender-history" class="sender-history"></div>
+      </section>
+
+      <section id="settings" class="panel warning-panel">
+        <div class="section-heading">
+          <h2>Settings / Safety</h2>
+          <p id="safety-note">Loading safety settings…</p>
+        </div>
+        <div class="toggle-row">
+          <label>Human approval</label>
+          <input type="checkbox" checked disabled>
+          <span>Enabled</span>
+        </div>
+        <div class="toggle-row danger">
+          <label>YOLO mode</label>
+          <input type="checkbox" disabled>
+          <span>Disabled for Phase 2</span>
+        </div>
+        <blockquote id="yolo-copy"></blockquote>
+        <p class="provider">Provider authentication: <strong>Coming later</strong></p>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <h2>Audit Events</h2>
+          <p>Local in-memory log of simulated UI actions.</p>
+        </div>
+        <div id="audit-events" class="audit-events"></div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

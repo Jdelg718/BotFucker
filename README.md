@@ -134,6 +134,40 @@ BF_IMAP_HOST=imap.mail.yahoo.com
 BF_SMTP_HOST=smtp.mail.yahoo.com
 ```
 
+## Phase 2 Local Review UI
+
+Phase 2 includes a branded local UI skeleton backed by deterministic fake data only. It does not connect to IMAP/SMTP/OAuth providers, does not send replies, does not move or delete mail, and does not change any real whitelist or blacklist. UI actions are mock simulations recorded as in-memory audit events.
+
+Run the local sample UI:
+
+```bash
+python3 -m botfucker.local_ui --host 127.0.0.1 --port 8765 --sample-data
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8765/
+```
+
+Available local JSON endpoints:
+
+- `GET /api/dashboard` — dashboard counts and safety mode flags.
+- `GET /api/review-queue` — deterministic sample review items.
+- `GET /api/senders` — sample sender history derived from the queue and local audit events.
+- `GET /api/audit-events` — in-memory mock action audit log.
+- `GET /api/settings` — safety settings, including human approval enabled and YOLO disabled.
+- `POST /api/actions` — records a mock action only. Supported actions: `approve_warning`, `dismiss`, `whitelist_sender`, `blacklist_sender`.
+
+Safety posture:
+
+- Human approval is enabled.
+- YOLO mode is visible but disabled.
+- Provider authentication is coming later.
+- All Phase 2 actions are mock/local simulations only.
+
+YOLO warning copy shown in the UI: “YOLO mode lets BotFucker reply/block without asking you first. This can save time and also make you look like an unhinged mailbox goblin if configured badly. Start conservative.”
+
 ## Test Before Going Live
 
 Compile-check the script and package:
