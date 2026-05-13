@@ -10,7 +10,7 @@ AI is excellent when builders use it to build. It is garbage when lead-gen paras
 
 ## Current State
 
-Merged in PR #1:
+Merged through PR #6:
 
 - v2 design document
 - reusable `botfucker/` Python package
@@ -21,7 +21,10 @@ Merged in PR #1:
 - warning templates
 - guarded live mode requiring explicit `--auto-approve`
 - dry-run default
-- tests for classifier/history/safety behavior
+- local review queue UI with sample mode and durable SQLite mode
+- durable review CLI and audit log
+- normalized n8n/webhook import contract
+- tests for classifier/history/safety/review/webhook/docs behavior
 
 ## Product Direction
 
@@ -75,75 +78,68 @@ Delivered:
 - safe CLI guardrails
 - tests
 
-### Phase 2 — Review Queue + Local UI Skeleton
+### Phase 2 — Review Queue + Local UI Skeleton ✅
 
-Goal: create a usable local review experience without committing to production auth yet.
+Status: merged.
 
-Deliverables:
+Delivered:
 
-- `review_items` model / JSON format
-- audit event model
-- local sample data generator using fake emails
-- minimal web UI or static dashboard prototype
+- sample/fake local review data
+- local browser UI skeleton
 - branded dark/orange/blue BotFucker styling
-- screens:
-  - dashboard
-  - review queue
-  - sender history
-  - settings mock
-- actions represented in UI:
-  - approve warning
-  - archive
-  - blacklist sender
-  - blacklist domain
-  - whitelist
-  - mark safe
-  - escalate strike
+- dashboard, review queue, sender history, settings mock
+- visual approval actions only
+- no email credentials and no real sends
 
-Acceptance criteria:
+### Phase 3 — CLI Review Workflow ✅
 
-- UI runs locally without email credentials.
-- Uses fake/sample emails only.
-- No real sends.
-- Shows classifier reasons and proposed draft responses.
-- Makes approval-first workflow obvious.
+Status: merged.
 
-### Phase 3 — CLI Review Workflow
+Delivered:
 
-Goal: make the core usable without a browser.
+- durable local SQLite review queue
+- CLI list/approve/dismiss/whitelist/blacklist/audit workflow
+- local JSON import for review items
+- enforced local-only safety scope and mock-only review state
+- durable audit trail
 
-Deliverables:
+### Phase 4 — n8n/Webhook Integration Contract ✅
 
-- `scan` command outputs review queue
-- `review` command displays pending items
-- `approve` command applies a selected action
-- `whitelist` / `blacklist` helpers
-- JSON output suitable for n8n/webhooks
+Status: merged.
 
-Acceptance criteria:
+Delivered:
 
-- No live send without explicit approval or YOLO mode.
-- Review items are durable and auditable.
+- normalized webhook input contract
+- n8n/provider JSON mapping guidance
+- deterministic classification during import
+- secret/header redaction and bounded snippets
+- invalid batch rejection without partial import
 
-### Phase 4 — n8n/Webhook Integration
+### Phase 5 — Durable Local UI ✅
 
-Goal: integrate with existing automation systems without putting mailbox credentials directly into BotFucker.
+Status: merged.
 
-Deliverables:
+Delivered:
 
-- webhook input contract
-- webhook output/action contract
-- n8n workflow documentation
-- Gmail/Microsoft trigger examples
-- approval callback pattern
+- `--db` mode for the local browser UI
+- durable SQLite-backed review queue, sender history, and audit views
+- local action application through `DurableReviewStore`
+- fail-closed startup requiring either `--sample-data` or `--db`
+- no provider auth, no live mailbox action
 
-Acceptance criteria:
+### Phase 6 — n8n Workflow Package ✅
 
-- n8n holds provider credentials.
-- BotFucker receives normalized messages or provider payloads.
-- Human approval can happen outside BotFucker if desired.
+Status: in PR #7.
 
-### Phase 5 — Provider Auth
+Targeted deliverables:
+
+- importable inactive `docs/n8n-workflow.json` starter
+- `docs/n8n-workflow.md` operator guide
+- safe provider boundary checklist
+- local CLI import command example
+- TDD coverage validating docs/workflow safety assumptions
+
+### Phase 7 — Provider Auth
 
 Goal: support real users connecting email and LLM providers.
 
@@ -166,7 +162,7 @@ Acceptance criteria:
 - Keys are not committed.
 - OAuth and key storage are documented clearly.
 
-### Phase 6 — Optional LLM Classifier
+### Phase 8 — Optional LLM Classifier
 
 Goal: improve classification quality without trusting email content blindly.
 
@@ -184,7 +180,7 @@ Acceptance criteria:
 - LLM output is validated before use.
 - Classifier reasons remain explainable.
 
-### Phase 7 — Guarded YOLO Mode
+### Phase 9 — Guarded YOLO Mode
 
 Goal: allow power users to automate replies/blocks while making footguns obvious.
 
@@ -206,6 +202,14 @@ Acceptance criteria:
 
 ## Near-Term Recommendation
 
-Next PR should be **Phase 2: Review Queue + Local UI Skeleton**.
+Next PR should be **Phase 7: Provider Auth Planning Stub**, not full OAuth implementation.
 
-Do not start with OAuth. Auth first will create a pile of provider-specific complexity before the product shape is clear. Build the review queue and fake-data UI first, then wire providers into a known interface.
+Recommended scope:
+
+- document provider-auth architecture options
+- define secret-storage requirements
+- define n8n-first integration posture versus direct OAuth
+- add tests/docs checks for “no secrets in browser/repo” assumptions
+- avoid implementing real provider credentials until the local/n8n review loop is proven with Kent’s actual workflow
+
+Auth first would have been corporate SaaS cosplay. Auth after a working review cockpit is less dumb.
