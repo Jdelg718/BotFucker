@@ -17,6 +17,8 @@ The v2 core is now split into reusable modules under `botfucker/`:
 - `models.py` normalizes provider-specific mail into stable input/output objects.
 - `classifier.py` returns structured deterministic classifications with reasons.
 - `history.py` tracks sender history, warning counts, and strike levels in SQLite.
+- `review_store.py` persists local review queue items and audit events in SQLite.
+- `review_cli.py` provides a provider-safe local review workflow around seeded/imported items.
 - `responses.py` contains human-reviewable warning templates.
 - `cli.py` keeps the IMAP proof-of-concept behavior behind the existing wrapper.
 
@@ -167,6 +169,53 @@ Safety posture:
 - All Phase 2 actions are mock/local simulations only.
 
 YOLO warning copy shown in the UI: “YOLO mode lets BotFucker reply/block without asking you first. This can save time and also make you look like an unhinged mailbox goblin if configured badly. Start conservative.”
+
+## Phase 3 Durable Review Queue CLI
+
+Phase 3 adds a durable, local-only SQLite review queue plus a CLI workflow. This is not provider auth and it is not live mailbox automation. The review CLI never connects to IMAP/SMTP/OAuth providers, never sends mail, never moves/deletes/archives mail, and never changes a real provider whitelist or blacklist. Approvals are local review approvals only; they record that a human approved a proposed warning in SQLite, but they do not send the warning.
+
+Seed deterministic fake/sample items:
+
+```bash
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 seed-samples
+```
+
+List pending local review items:
+
+```bash
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 list --status pending
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 list --status pending --json
+```
+
+Record local review decisions:
+
+```bash
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 approve sample-001 --actor you --note "approved local warning draft"
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 dismiss sample-002 --actor you
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 whitelist-sender sample-003 --actor you
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 blacklist-sender sample-004 --actor you
+```
+
+Show durable local audit history:
+
+```bash
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 audit
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 audit --json
+```
+
+Import local review items from JSON (a list of item objects, or `{ "items": [...] }`):
+
+```bash
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 import-json review_items.json
+cat review_items.json | python3 -m botfucker.review_cli --db botfucker_review.sqlite3 import-json -
+```
+
+Durable queue notes:
+
+- Re-importing the same `item_id` is idempotent and does not duplicate items.
+- Re-importing preserves `pending`/`actioned` human review status and audit history.
+- The local SQLite DB must not contain secrets, tokens, passwords, or real mailbox credentials.
+- Sample data uses reserved documentation domains only.
 
 ## Test Before Going Live
 
