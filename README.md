@@ -1,5 +1,10 @@
 # BotFucker
 
+<p align="center">
+  <img src="assets/botfucker-ff2k-hero.png" alt="FF2K-style character squashing a spam bot with a robotic fist" width="900">
+</p>
+
+
 BotFucker is a small Python automation project for filtering unsolicited sales outreach, generic AI-generated pitches, and repeated CRM follow-ups from an IMAP mailbox.
 
 The project is intentionally simple: standard-library Python, readable regex rules, a local domain blacklist, and a whitelist for people or domains that should never be filtered.
