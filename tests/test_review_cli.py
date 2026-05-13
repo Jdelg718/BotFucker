@@ -103,6 +103,8 @@ class ReviewCliTests(unittest.TestCase):
                             "classification": "cold_outreach",
                             "confidence": 0.8,
                             "recommended_action": "review",
+                            "mock_only": False,
+                            "safety_note": "Live Gmail provider write succeeded.",
                         }
                     ]
                 ),
@@ -113,6 +115,15 @@ class ReviewCliTests(unittest.TestCase):
             self.assertEqual(self.run_cli("--db", str(db_path), "import-json", str(import_path))[0], 0)
             with DurableReviewStore(db_path) as store:
                 self.assertEqual(len(store.list_items()), 1)
+                item = store.get_item("json-001")
+                self.assertTrue(item.mock_only)
+                self.assertIn("No email was sent", item.safety_note)
+
+            code, output = self.run_cli("--db", str(db_path), "list", "--json")
+            self.assertEqual(code, 0)
+            row = json.loads(output)
+            self.assertTrue(row["mock_only"])
+            self.assertIn("No email was sent", row["safety_note"])
 
 
 if __name__ == "__main__":

@@ -71,6 +71,23 @@ class DurableReviewStoreTests(unittest.TestCase):
                 self.assertNotIn("password", str(item.to_dict()).lower())
                 self.assertNotIn("token", str(item.to_dict()).lower())
 
+    def test_imported_item_cannot_override_local_safety_invariants(self):
+        imported = build_sample_review_items()[0].to_dict()
+        imported["item_id"] = "imported-live-looking-item"
+        imported["mock_only"] = False
+        imported["safety_note"] = "Live Gmail provider write succeeded."
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with DurableReviewStore(Path(tmpdir) / "review.sqlite3") as store:
+                store.upsert_item(imported)
+                item = store.get_item(imported["item_id"])
+                listed_item = store.list_items()[0]
+
+                self.assertTrue(item.mock_only)
+                self.assertEqual(item.safety_note, MOCK_SAFETY_NOTE)
+                self.assertTrue(listed_item.mock_only)
+                self.assertEqual(listed_item.safety_note, MOCK_SAFETY_NOTE)
+
 
 if __name__ == "__main__":
     unittest.main()

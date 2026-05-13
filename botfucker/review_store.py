@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -258,7 +259,7 @@ class DurableReviewStore:
 
 def coerce_review_item(data: ReviewItem | dict[str, Any]) -> ReviewItem:
     if isinstance(data, ReviewItem):
-        return data
+        return replace(data, mock_only=True, safety_note=MOCK_SAFETY_NOTE)
     if not isinstance(data, dict):
         raise ReviewStoreError(f"Unsupported review item payload: {type(data)!r}")
 
@@ -281,8 +282,8 @@ def coerce_review_item(data: ReviewItem | dict[str, Any]) -> ReviewItem:
         allowed_actions=list(data.get("allowed_actions", SUPPORTED_ACTIONS)),
         status=data.get("status", "pending") if data.get("status", "pending") in {"pending", "actioned"} else "pending",
         source=str(data.get("source", "local_import")),
-        mock_only=bool(data.get("mock_only", True)),
-        safety_note=str(data.get("safety_note", MOCK_SAFETY_NOTE)),
+        mock_only=True,
+        safety_note=MOCK_SAFETY_NOTE,
     )
 
 
