@@ -211,6 +211,43 @@ class LocalUIRenderingSafetyTests(unittest.TestCase):
         self.assertIn("createElement", app_js)
         self.assertIn("textContent", app_js)
 
+    def test_local_ui_uses_ff2k_hero_art_and_brand_tokens(self):
+        web_dir = Path(__file__).resolve().parent.parent / "web"
+        index_html = (web_dir / "index.html").read_text(encoding="utf-8")
+        styles_css = (web_dir / "styles.css").read_text(encoding="utf-8")
+
+        self.assertIn('/assets/botfucker-ff2k-hero.png', index_html)
+        self.assertIn('alt="FF2K-style BotFucker mascot crushing spam bots"', index_html)
+        self.assertIn('Inbox defense command center', index_html)
+        self.assertIn('--bitcoin-orange: #f7931a', styles_css.lower())
+        self.assertIn('--security-blue: #1da9ff', styles_css.lower())
+        self.assertIn('box-shadow: 0 8px 0', styles_css)
+        self.assertIn('hero-art', styles_css)
+
+    def test_ff2k_hero_asset_is_served_locally(self):
+        state = LocalUIState.sample()
+        httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(state))
+        httpd.daemon_threads = True
+        httpd.block_on_close = False
+        thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+        thread.start()
+        try:
+            host, port = httpd.server_address
+            conn = HTTPConnection(host, port, timeout=5)
+            conn.request("GET", "/assets/botfucker-ff2k-hero.png")
+            response = conn.getresponse()
+            data = response.read()
+            headers = dict(response.getheaders())
+            conn.close()
+
+            self.assertEqual(response.status, 200)
+            self.assertEqual(headers.get("Content-Type"), "image/png")
+            self.assertGreater(len(data), 1000)
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+            thread.join(timeout=2)
+
 
 if __name__ == "__main__":
     unittest.main()

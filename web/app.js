@@ -150,7 +150,7 @@ function renderQueue(items) {
         item_id: button.dataset.itemId,
         action: button.dataset.action,
         actor: "local-browser-ui",
-        note: "Triggered from Phase 2 local UI skeleton",
+        note: "Triggered from FF2K local inbox defense cockpit",
       });
       await refresh();
     });
