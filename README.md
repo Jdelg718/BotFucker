@@ -275,6 +275,20 @@ python3 -m botfucker.review_cli --db "$BOTFUCKER_REVIEW_DB" import-webhook-json 
 python3 -m botfucker.local_ui --host 127.0.0.1 --port 8765 --db "$BOTFUCKER_REVIEW_DB"
 ```
 
+## Phase 7 Provider Auth Plan
+
+Phase 7 documents how provider auth should arrive later without shoving OAuth tokens into the local review UI like a raccoon hiding snacks in an engine bay.
+
+See [`docs/provider-auth-plan.md`](docs/provider-auth-plan.md).
+
+Phase 7 does **not** implement Gmail OAuth, Microsoft OAuth, IMAP password handling, YOLO mode, or send/move/delete provider calls. It defines:
+
+- n8n-first versus direct OAuth tradeoffs
+- secret storage requirements
+- browser/server boundaries
+- approved action export shape
+- future n8n action bridge rules
+
 ## Test Before Going Live
 
 Compile-check the script and package:

@@ -10,7 +10,7 @@ AI is excellent when builders use it to build. It is garbage when lead-gen paras
 
 ## Current State
 
-Merged through PR #6:
+Merged through PR #7:
 
 - v2 design document
 - reusable `botfucker/` Python package
@@ -24,6 +24,7 @@ Merged through PR #6:
 - local review queue UI with sample mode and durable SQLite mode
 - durable review CLI and audit log
 - normalized n8n/webhook import contract
+- n8n workflow package and mapping guide
 - tests for classifier/history/safety/review/webhook/docs behavior
 
 ## Product Direction
@@ -129,9 +130,9 @@ Delivered:
 
 ### Phase 6 — n8n Workflow Package ✅
 
-Status: in PR #7.
+Status: merged.
 
-Targeted deliverables:
+Delivered:
 
 - importable inactive `docs/n8n-workflow.json` starter
 - `docs/n8n-workflow.md` operator guide
@@ -139,27 +140,34 @@ Targeted deliverables:
 - local CLI import command example
 - TDD coverage validating docs/workflow safety assumptions
 
-### Phase 7 — Provider Auth
+### Phase 7 — Provider Auth Planning Stub
 
-Goal: support real users connecting email and LLM providers.
+Status: in PR #8.
 
-Email providers:
+Goal: document how provider auth and provider actions should arrive later without adding real OAuth or live mailbox side effects in this phase.
 
-- Gmail OAuth
-- Microsoft OAuth
-- IMAP fallback for developers/self-hosters
+Deliverables:
 
-LLM providers:
+- n8n-first versus Direct OAuth tradeoff analysis
+- IMAP/SMTP fallback constraints
+- secret storage requirements
+- browser/server boundary requirements
+- approved action export shape
+- future n8n action bridge rules
 
-- OpenAI API key
-- Anthropic API key
-- OpenRouter API key
-- local/custom endpoint later
+Non-goals:
+
+- no Gmail OAuth implementation
+- no Microsoft OAuth implementation
+- no IMAP passwords in BotFucker core
+- no YOLO mode
+- no send/move/delete provider calls
 
 Acceptance criteria:
 
 - Secrets never reach the browser.
 - Keys are not committed.
+- Provider action execution is separated from local review approval.
 - OAuth and key storage are documented clearly.
 
 ### Phase 8 — Optional LLM Classifier
@@ -202,14 +210,14 @@ Acceptance criteria:
 
 ## Near-Term Recommendation
 
-Next PR should be **Phase 7: Provider Auth Planning Stub**, not full OAuth implementation.
+Next PR after Phase 7 should be **Approved Action Export**, not OAuth implementation.
 
 Recommended scope:
 
-- document provider-auth architecture options
-- define secret-storage requirements
-- define n8n-first integration posture versus direct OAuth
-- add tests/docs checks for “no secrets in browser/repo” assumptions
-- avoid implementing real provider credentials until the local/n8n review loop is proven with Kent’s actual workflow
+- add a local-only `export-approved-actions` command
+- export only human-reviewed SQLite audit events
+- make the export idempotent/traceable using audit IDs
+- preserve the provider boundary: export intent, do not execute provider actions
+- add tests for no `--live`, no provider credentials, and no unapproved action export
 
-Auth first would have been corporate SaaS cosplay. Auth after a working review cockpit is less dumb.
+OAuth can wait until we know the exact action contract. Building OAuth first is how products become login screens with delusions of grandeur.
