@@ -28,6 +28,19 @@ RecommendedAction = Literal[
     "warn_3",
     "block_candidate",
 ]
+ReviewAction = Literal[
+    "approve_reply",
+    "archive",
+    "blacklist_sender",
+    "blacklist_domain",
+    "whitelist_sender",
+    "whitelist_domain",
+    "escalate_strike",
+    "mark_safe",
+    "skip",
+]
+ActionMode = Literal["human_approval", "auto_approve"]
+ProviderAuthMode = Literal["oauth", "api_key", "imap"]
 
 
 def decode_mime_header(value: str | None) -> str:
@@ -151,4 +164,28 @@ class ClassificationResult:
             "confidence": round(self.confidence, 3),
             "recommended_action": self.recommended_action,
             "reasons": self.reasons,
+        }
+
+
+@dataclass(frozen=True)
+class ReviewQueueItem:
+    """Provider/UI-neutral record for future review queues and branded apps."""
+
+    message: EmailMessage
+    classification: ClassificationResult
+    sender_strike_level: int = 0
+    allowed_actions: list[ReviewAction] = field(default_factory=list)
+    draft_reply: str = ""
+    action_mode: ActionMode = "human_approval"
+    provider_auth_mode: ProviderAuthMode | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "message": self.message.to_dict(),
+            "classification": self.classification.to_dict(),
+            "sender_strike_level": self.sender_strike_level,
+            "allowed_actions": self.allowed_actions,
+            "draft_reply": self.draft_reply,
+            "action_mode": self.action_mode,
+            "provider_auth_mode": self.provider_auth_mode,
         }

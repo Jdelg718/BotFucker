@@ -104,7 +104,8 @@ Review Queue
 Preferred production path:
 
 - n8n Gmail/Microsoft trigger
-- OAuth-managed credentials
+- OAuth-managed credentials for inbox providers
+- API-key authentication for BotFucker service/API clients
 - no raw app password in BotFucker config
 
 Fallback developer path:
@@ -197,8 +198,13 @@ Possible frontends:
 
 - n8n approval workflow
 - Telegram approval buttons
+- branded hosted review queue for non-technical users
 - simple local web UI
 - GitHub issue-style queue for development/testing
+
+The core should stay frontend-agnostic: normalized messages, classifications,
+review-queue records, and approval actions should be API-friendly so a branded UI
+can be added later without rewriting the classifier or sender-history logic.
 
 ### 6. Draft responses
 
@@ -212,6 +218,8 @@ Tone levels:
 - `legalish`
 
 No response should be sent automatically unless the user explicitly configures automation for a class of messages.
+A YOLO/auto-approve mode may exist for power users and cron jobs, but it must be
+a clearly named guarded action mode, disabled by default, and separate from ordinary live/provider access.
 
 ## Near-Term Roadmap
 

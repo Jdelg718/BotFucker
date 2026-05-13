@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import dataclass
+from typing import Literal
 from datetime import datetime, timezone
 from pathlib import Path
 
 from .models import ClassificationResult, EmailMessage
+
+StatusScope = Literal["sender", "domain", "sender_or_domain"]
 
 
 @dataclass(frozen=True)
@@ -78,25 +81,41 @@ class SenderHistory:
         ).fetchone()
         return int(row["max_strike"] or 0) if row else 0
 
-    def is_blacklisted(self, sender_email: str, sender_domain: str) -> bool:
-        row = self.connection.execute(
-            """
-            SELECT 1 FROM senders
-            WHERE (sender_email = ? OR sender_domain = ?) AND blacklist_status = 1
-            LIMIT 1
-            """,
-            (sender_email.lower(), sender_domain.lower()),
-        ).fetchone()
-        return row is not None
+    def is_blacklisted(self, sender_email: str, sender_domain: str, *, status_scope: StatusScope = "sender_or_domain") -> bool:
+        """Return blacklist status for sender, domain, or the legacy combined scope.
 
-    def is_whitelisted(self, sender_email: str, sender_domain: str) -> bool:
+        `sender_or_domain` intentionally treats any flagged sender on a domain as
+        affecting the whole domain. Callers should pass the scope explicitly so
+        that domain-level side effects are visible at the call site.
+        """
+        return self._status_enabled(sender_email, sender_domain, "blacklist_status", status_scope)
+
+    def is_whitelisted(self, sender_email: str, sender_domain: str, *, status_scope: StatusScope = "sender_or_domain") -> bool:
+        """Return whitelist status for sender, domain, or the legacy combined scope."""
+        return self._status_enabled(sender_email, sender_domain, "whitelist_status", status_scope)
+
+    def _status_enabled(self, sender_email: str, sender_domain: str, column: str, status_scope: StatusScope) -> bool:
+        if column not in {"blacklist_status", "whitelist_status"}:
+            raise ValueError(f"Unsupported status column: {column}")
+
+        sender_email = sender_email.lower()
+        sender_domain = sender_domain.lower()
+
+        if status_scope == "sender":
+            where = "sender_email = ?"
+            params = (sender_email,)
+        elif status_scope == "domain":
+            where = "sender_domain = ?"
+            params = (sender_domain,)
+        elif status_scope == "sender_or_domain":
+            where = "(sender_email = ? OR sender_domain = ?)"
+            params = (sender_email, sender_domain)
+        else:
+            raise ValueError(f"Unsupported status scope: {status_scope}")
+
         row = self.connection.execute(
-            """
-            SELECT 1 FROM senders
-            WHERE (sender_email = ? OR sender_domain = ?) AND whitelist_status = 1
-            LIMIT 1
-            """,
-            (sender_email.lower(), sender_domain.lower()),
+            f"SELECT 1 FROM senders WHERE {where} AND {column} = 1 LIMIT 1",
+            params,
         ).fetchone()
         return row is not None
 

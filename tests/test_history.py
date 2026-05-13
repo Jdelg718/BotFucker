@@ -54,10 +54,25 @@ class SenderHistoryTests(unittest.TestCase):
             history.record_classification(message, classify_message(message))
 
             history.set_whitelist("person@example.com", True)
-            self.assertTrue(history.is_whitelisted("person@example.com", "example.com"))
+            self.assertTrue(history.is_whitelisted("person@example.com", "example.com", status_scope="sender"))
 
             history.set_blacklist("person@example.com", True)
-            self.assertTrue(history.is_blacklisted("person@example.com", "example.com"))
+            self.assertTrue(history.is_blacklisted("person@example.com", "example.com", status_scope="sender"))
+            history.close()
+
+    def test_status_scope_makes_domain_side_effect_explicit(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            history = SenderHistory(Path(tmpdir) / "history.sqlite3")
+            first = EmailMessage(from_email="one@example.com", sender_domain="example.com")
+            second = EmailMessage(from_email="two@example.com", sender_domain="example.com")
+            history.record_classification(first, classify_message(first))
+            history.record_classification(second, classify_message(second))
+
+            history.set_blacklist("one@example.com", True)
+
+            self.assertFalse(history.is_blacklisted("two@example.com", "example.com", status_scope="sender"))
+            self.assertTrue(history.is_blacklisted("two@example.com", "example.com", status_scope="domain"))
+            self.assertTrue(history.is_blacklisted("two@example.com", "example.com", status_scope="sender_or_domain"))
             history.close()
 
 

@@ -30,10 +30,10 @@ See [DESIGN.md](DESIGN.md) for the proposed architecture and roadmap.
 - Looks for generic AI-pitch markers such as overly formal structure, vague value propositions, and missing personal references.
 - Produces structured classification results with reasons and recommended actions.
 - Tracks sender/domain history and strike levels locally in SQLite.
-- Sends one professional notice of non-consent to flagged senders only in live mode.
-- Moves flagged messages to `Junk/Sales` only in live mode.
-- Adds the sender domain to a local blacklist only in live mode.
-- Deletes future unread messages from blacklisted domains only in live mode.
+- Drafts recommended warning actions for human review by default.
+- Sends notices, moves flagged messages, and updates blacklist state only when both `--live` and `--auto-approve` are supplied.
+- Marks strike-4 senders as `block_candidate` for review instead of sending the strike-3 warning endlessly.
+- Deletes future unread messages from explicitly blacklisted domains only in approved live automation mode.
 - Skips all whitelisted contacts and domains.
 
 ## Safety First
@@ -46,9 +46,9 @@ Dry-run mode logs what it would do, but does not:
 - move email
 - delete email
 - update `blacklist.txt`
-- send warning replies without explicit `--live`
+- send warning replies without explicit `--live --auto-approve`
 
-Use `--live` only after testing the filters on your own mailbox.
+`--live` by itself fails closed. Use `--auto-approve` only after testing the filters on your own mailbox and accepting legacy YOLO-style automation.
 
 ## Requirements
 
@@ -160,10 +160,10 @@ Emit dry-run/review output as JSON lines:
 python3 outreach_filter.py --json
 ```
 
-Run live only after reviewing the dry-run output. Live mode can send replies, move messages, and update blacklist/history state:
+Run live automation only after reviewing the dry-run output. `--live` must be paired with explicit approval before the tool can send replies, move messages, delete blacklisted messages, or update blacklist/history state:
 
 ```bash
-python3 outreach_filter.py --live
+python3 outreach_filter.py --live --auto-approve
 ```
 
 ## Scheduling
@@ -171,14 +171,14 @@ python3 outreach_filter.py --live
 Run every 15 minutes with cron:
 
 ```cron
-*/15 * * * * cd /path/to/BotFucker && /usr/bin/python3 outreach_filter.py --live >> outreach_filter.log 2>&1
+*/15 * * * * cd /path/to/BotFucker && /usr/bin/python3 outreach_filter.py --live --auto-approve >> outreach_filter.log 2>&1
 ```
 
 For Windows Task Scheduler, use:
 
 ```text
 Program: python
-Arguments: C:\path\to\BotFucker\outreach_filter.py --live
+Arguments: C:\path\to\BotFucker\outreach_filter.py --live --auto-approve
 ```
 
 ## Tuning The Filters

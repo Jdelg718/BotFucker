@@ -70,7 +70,7 @@ def load_config() -> Config:
 def is_whitelisted(sender: str, domain: str, config: Config, history: SenderHistory | None = None) -> bool:
     if sender in config.whitelist_contacts or domain in config.whitelist_domains:
         return True
-    return history.is_whitelisted(sender, domain) if history else False
+    return history.is_whitelisted(sender, domain, status_scope="sender_or_domain") if history else False
 
 
 def load_blacklist(path: Path) -> set[str]:
@@ -134,10 +134,13 @@ def send_notice_reply(config: Config, original_message: Message, sender: str, st
         smtp.send_message(reply)
 
 
-def process_inbox(config: Config, live: bool, json_output: bool = False) -> None:
+def process_inbox(config: Config, live: bool, json_output: bool = False, auto_approve: bool = False) -> None:
+    if live and not auto_approve:
+        raise RuntimeError("--live requires --auto-approve before replies, moves, deletes, or blacklist writes are performed")
+
     blacklist = load_blacklist(config.blacklist_file)
     cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-    mode = "LIVE" if live else "DRY-RUN"
+    mode = "LIVE/AUTO-APPROVE" if live else "DRY-RUN"
 
     with SenderHistory(config.history_db) as history, imaplib.IMAP4_SSL(config.imap_host, config.imap_port) as imap:
         imap.login(config.email_address, config.email_password)
@@ -163,7 +166,7 @@ def process_inbox(config: Config, live: bool, json_output: bool = False) -> None
                 continue
 
             domain_strike_level = history.get_domain_strike_level(sender_domain)
-            blacklisted = sender_domain in blacklist or history.is_blacklisted(sender, sender_domain)
+            blacklisted = sender_domain in blacklist or history.is_blacklisted(sender, sender_domain, status_scope="sender_or_domain")
             if blacklisted:
                 result = classify_message(normalized, known_offender=True, strike_level=domain_strike_level)
                 history.record_classification(normalized, result)
@@ -181,7 +184,11 @@ def process_inbox(config: Config, live: bool, json_output: bool = False) -> None
             )
             history.record_classification(normalized, result)
 
-            if result.recommended_action in {"warn_1", "warn_2", "warn_3", "block_candidate"}:
+            if result.recommended_action == "block_candidate":
+                _emit(mode, "block_candidate", normalized, result, json_output)
+                continue
+
+            if result.recommended_action in {"warn_1", "warn_2", "warn_3"}:
                 _emit(mode, "flagged", normalized, result, json_output)
 
                 if live:
@@ -227,7 +234,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--live",
         action="store_true",
-        help="Perform replies, moves, deletes, and blacklist writes. Dry-run is default.",
+        help="Connect in live mode. Requires --auto-approve before replies, moves, deletes, or blacklist writes occur.",
+    )
+    parser.add_argument(
+        "--auto-approve",
+        action="store_true",
+        help="Explicitly approve legacy automation for warnings, moves, deletes, and blacklist writes.",
     )
     parser.add_argument(
         "--json",
@@ -239,4 +251,4 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    process_inbox(load_config(), live=args.live, json_output=args.json)
+    process_inbox(load_config(), live=args.live, json_output=args.json, auto_approve=args.auto_approve)
