@@ -16,6 +16,7 @@ from typing import Any
 from .review_queue import MOCK_SAFETY_NOTE
 from .review_store import DurableReviewStore, ReviewStoreError
 from .samples import build_sample_review_items
+from .webhook_contract import WebhookPayloadError, iter_webhook_review_items
 
 ACTION_BY_COMMAND = {
     "approve": "approve_warning",
@@ -51,6 +52,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     import_parser = subparsers.add_parser("import-json", help="Import review items from a JSON file or '-' for stdin.")
     import_parser.add_argument("path", help="JSON list of review items, {'items': [...]}, or '-' for stdin.")
+
+    webhook_import_parser = subparsers.add_parser(
+        "import-webhook-json",
+        help="Normalize n8n/webhook email JSON from a file or '-' for stdin into local review items.",
+    )
+    webhook_import_parser.add_argument("path", help="Webhook JSON object/list/wrapper, or '-' for stdin.")
 
     return parser
 
@@ -119,7 +126,18 @@ def main(argv: list[str] | None = None) -> int:
                 print("Safety: import records local review metadata only; no provider action was performed.")
                 return 0
 
-    except (OSError, json.JSONDecodeError, ReviewStoreError) as exc:
+            if args.command == "import-webhook-json":
+                payload = _load_json(args.path)
+                # Normalize the entire batch before writing, so invalid later
+                # messages cannot partially import earlier messages.
+                items = iter_webhook_review_items(payload)
+                inserted = store.upsert_items(items)
+                total = len(store.list_items(status="all"))
+                print(f"Imported {len(items)} webhook message(s) into {args.db} ({inserted} new, {total} total).")
+                print("Safety: webhook import stores bounded local review metadata only; no provider action was performed.")
+                return 0
+
+    except (OSError, json.JSONDecodeError, ReviewStoreError, WebhookPayloadError) as exc:
         print(f"review_cli error: {exc}", file=sys.stderr)
         return 2
 

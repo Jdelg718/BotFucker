@@ -125,6 +125,73 @@ class ReviewCliTests(unittest.TestCase):
             self.assertTrue(row["mock_only"])
             self.assertIn("No email was sent", row["safety_note"])
 
+    def test_import_webhook_json_file_and_stdin(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "review.sqlite3"
+            payload = {
+                "messages": [
+                    {
+                        "id": "gmail-msg-cli-1",
+                        "threadId": "thread-cli",
+                        "from": {"email": "Pitch@Example.com", "name": "Pitch Sender"},
+                        "subject": "Quick call about lead generation",
+                        "body": "Could we book a quick call about lead generation next week?",
+                        "receivedAt": "2026-05-13T10:00:00Z",
+                        "provider": "gmail",
+                        "source": {"workflow": "n8n-cli-test"},
+                    }
+                ]
+            }
+            import_path = Path(tmpdir) / "webhook.json"
+            import_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            code, output = self.run_cli("--db", str(db_path), "import-webhook-json", str(import_path))
+            self.assertEqual(code, 0)
+            self.assertIn("Imported 1 webhook message", output)
+            with DurableReviewStore(db_path) as store:
+                item = store.get_item("webhook:gmail:gmail-msg-cli-1")
+                self.assertEqual(item.from_email, "pitch@example.com")
+                self.assertEqual(item.classification, "cold_outreach")
+                self.assertEqual(item.source, "webhook:gmail:n8n-cli-test")
+
+            payload["messages"][0]["id"] = "gmail-msg-cli-stdin"
+            stdin = io.StringIO(json.dumps(payload))
+            with mock.patch("sys.stdin", stdin):
+                code, output = self.run_cli("--db", str(db_path), "import-webhook-json", "-")
+            self.assertEqual(code, 0)
+            with DurableReviewStore(db_path) as store:
+                self.assertEqual(len(store.list_items(status="all")), 2)
+
+    def test_import_webhook_json_rejects_invalid_batch_without_partial_import(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "review.sqlite3"
+            import_path = Path(tmpdir) / "bad-webhook.json"
+            import_path.write_text(
+                json.dumps(
+                    {
+                        "items": [
+                            {
+                                "id": "ok-before-bad",
+                                "from": "ok@example.com",
+                                "subject": "OK",
+                                "snippet": "OK",
+                                "received_at": "2026-05-13T10:00:00Z",
+                            },
+                            {"from": "missing-id@example.com", "subject": "bad"},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                code, _output = self.run_cli("--db", str(db_path), "import-webhook-json", str(import_path))
+            self.assertEqual(code, 2)
+            self.assertIn("webhook", stderr.getvalue().lower())
+            with DurableReviewStore(db_path) as store:
+                self.assertEqual(store.list_items(status="all"), [])
+
 
 if __name__ == "__main__":
     unittest.main()

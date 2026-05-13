@@ -18,6 +18,7 @@ The v2 core is now split into reusable modules under `botfucker/`:
 - `classifier.py` returns structured deterministic classifications with reasons.
 - `history.py` tracks sender history, warning counts, and strike levels in SQLite.
 - `review_store.py` persists local review queue items and audit events in SQLite.
+- `webhook_contract.py` normalizes bounded n8n/webhook email JSON into local review items.
 - `review_cli.py` provides a provider-safe local review workflow around seeded/imported items.
 - `responses.py` contains human-reviewable warning templates.
 - `cli.py` keeps the IMAP proof-of-concept behavior behind the existing wrapper.
@@ -216,6 +217,21 @@ Durable queue notes:
 - Re-importing preserves `pending`/`actioned` human review status and audit history.
 - The local SQLite DB must not contain secrets, tokens, passwords, or real mailbox credentials.
 - Sample data uses reserved documentation domains only.
+
+## Phase 4 n8n/Webhook Contract Import
+
+Phase 4 adds a normalized JSON contract for messages that n8n or another provider-side workflow has already fetched. In this flow, n8n owns Gmail/Microsoft/IMAP credentials and maps mail into bounded JSON; BotFucker only imports that JSON into the local SQLite review queue. There is no HTTP listener, OAuth setup, provider auth, sending, moving, deleting, archiving, whitelisting, or blacklisting in this adapter.
+
+Import n8n/webhook JSON from a file or stdin:
+
+```bash
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 import-webhook-json n8n-messages.json
+cat n8n-messages.json | python3 -m botfucker.review_cli --db botfucker_review.sqlite3 import-webhook-json -
+```
+
+Accepted payload shapes include a single message object, a list of message objects, or an object with `items`, `events`, or `messages` arrays. Required fields are a stable message id, sender email, received timestamp, and subject and/or bounded preview/body text. The importer redacts secret-looking values, drops raw headers, truncates long snippets, classifies deterministically, and rejects invalid batches without partial import.
+
+See [docs/webhook-contract.md](docs/webhook-contract.md) for the JSON examples and n8n mapping guidance.
 
 ## Test Before Going Live
 
