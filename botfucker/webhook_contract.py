@@ -24,7 +24,20 @@ _SECRET_KEY_RE = re.compile(
     r"(authorization|cookie|set-cookie|token|access[_-]?token|refresh[_-]?token|api[_-]?key|secret|password|credential)",
     re.IGNORECASE,
 )
+_CREDENTIAL_HEADER_NAMES = (
+    r"authorization",
+    r"proxy-authorization",
+    r"x-api-key",
+    r"api-key",
+    r"x-auth-token",
+    r"x-access-token",
+    r"access-token",
+    r"set-cookie",
+    r"cookie",
+    r"[A-Za-z0-9-]*(?:secret|token|credential|password)[A-Za-z0-9-]*",
+)
 _SECRET_VALUE_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(rf"(?im)(?<![^\n\r])\s*(?:{'|'.join(_CREDENTIAL_HEADER_NAMES)})\s*:\s*[^\n\r]+"),
     re.compile(r"\bBearer\s+[^\s,;]+", re.IGNORECASE),
     re.compile(r"\b(Basic|Digest)\s+[^\s,;]+", re.IGNORECASE),
     re.compile(r"\bCookie\s*:\s*[^\n\r]+", re.IGNORECASE),

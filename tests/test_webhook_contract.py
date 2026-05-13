@@ -59,6 +59,38 @@ class WebhookContractTests(unittest.TestCase):
         self.assertIn("[redacted]", item.snippet)
         self.assertEqual(item.source, "webhook:gmail:n8n")
 
+    def test_generic_credential_header_lines_are_redacted_from_persisted_snippet(self):
+        payload = self.sample_payload()
+        secret_header_lines = [
+            "Authorization: abc123xyz",
+            "Proxy-Authorization: anything",
+            "X-Api-Key: foo123",
+            "X-Auth-Token: token123",
+            "Set-Cookie: sid=secret",
+            "Some-Secret: hidden456",
+            "Access-Token: access789",
+        ]
+        payload["snippet"] = "\n".join(["Hello reviewer", *secret_header_lines, "Budget: value"])
+
+        item = webhook_payload_to_review_item(payload)
+        persisted = json.dumps(item.to_dict(), sort_keys=True)
+
+        for secret in (
+            "abc123xyz",
+            "anything",
+            "foo123",
+            "token123",
+            "sid=secret",
+            "hidden456",
+            "access789",
+            "Some-Secret",
+            "Access-Token",
+        ):
+            self.assertNotIn(secret, persisted)
+        self.assertIn("[redacted]", item.snippet)
+        self.assertIn("Hello reviewer", item.snippet)
+        self.assertIn("Budget: value", item.snippet)
+
     def test_body_is_truncated_for_review_storage(self):
         payload = self.sample_payload()
         payload.pop("snippet")
