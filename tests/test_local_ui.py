@@ -1,10 +1,12 @@
 import json
+import tempfile
 import threading
 import unittest
 from http.client import HTTPConnection
 from pathlib import Path
 
-from botfucker.local_ui import LocalUIState, make_handler
+from botfucker.local_ui import LocalUIState, make_handler, validate_mode_args
+from botfucker.review_store import DurableReviewStore
 from botfucker.samples import build_sample_review_items
 
 try:
@@ -110,6 +112,94 @@ class LocalUISmokeTests(unittest.TestCase):
         self.assertEqual(action_status, 200)
         self.assertEqual(event["actor"], actor)
         self.assertEqual(event["note"], note)
+
+
+class LocalUIDurableSQLiteTests(unittest.TestCase):
+    def setUp(self):
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.db_path = Path(self.tempdir.name) / "botfucker_review.sqlite3"
+        with DurableReviewStore(self.db_path) as store:
+            store.upsert_items(build_sample_review_items())
+        state = LocalUIState.sqlite(self.db_path)
+        self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(state))
+        self.httpd.daemon_threads = True
+        self.httpd.block_on_close = False
+        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+        self.thread.start()
+        self.host, self.port = self.httpd.server_address
+
+    def tearDown(self):
+        self.httpd.shutdown()
+        self.httpd.server_close()
+        self.thread.join(timeout=2)
+        self.tempdir.cleanup()
+
+    def request_json(self, method, path, body=None):
+        conn = HTTPConnection(self.host, self.port, timeout=5)
+        payload = json.dumps(body).encode("utf-8") if body is not None else None
+        headers = {"Content-Type": "application/json"} if body is not None else {}
+        conn.request(method, path, body=payload, headers=headers)
+        response = conn.getresponse()
+        data = response.read().decode("utf-8")
+        response_headers = dict(response.getheaders())
+        conn.close()
+        return response.status, json.loads(data), response_headers
+
+    def test_dashboard_review_queue_senders_and_audit_read_from_sqlite(self):
+        status, dashboard, _headers = self.request_json("GET", "/api/dashboard")
+        self.assertEqual(status, 200)
+        self.assertEqual(dashboard["storage_mode"], "sqlite")
+        self.assertEqual(dashboard["db_path"], self.db_path.name)
+        self.assertFalse(dashboard["sample_data"])
+        self.assertTrue(dashboard["mock_only"])
+        self.assertEqual(dashboard["counts"]["total_review_items"], len(build_sample_review_items()))
+        self.assertEqual(dashboard["counts"]["pending_review_items"], len(build_sample_review_items()))
+        self.assertEqual(dashboard["counts"]["actioned_review_items"], 0)
+        self.assertEqual(dashboard["counts"]["audit_events"], 0)
+
+        queue_status, queue, _headers = self.request_json("GET", "/api/review-queue")
+        self.assertEqual(queue_status, 200)
+        self.assertEqual(queue["storage_mode"], "sqlite")
+        self.assertEqual(len(queue["items"]), len(build_sample_review_items()))
+
+        sender_status, senders, _headers = self.request_json("GET", "/api/senders")
+        self.assertEqual(sender_status, 200)
+        self.assertEqual(senders["storage_mode"], "sqlite")
+        self.assertGreaterEqual(len(senders["senders"]), 1)
+        self.assertIn("sender", senders["senders"][0])
+
+        audit_status, audit, _headers = self.request_json("GET", "/api/audit-events")
+        self.assertEqual(audit_status, 200)
+        self.assertEqual(audit["storage_mode"], "sqlite")
+        self.assertEqual(audit["events"], [])
+
+    def test_action_endpoint_persists_action_and_audit_to_sqlite(self):
+        item_id = build_sample_review_items()[0].item_id
+        action_status, event, _headers = self.request_json(
+            "POST",
+            "/api/actions",
+            {"item_id": item_id, "action": "dismiss", "actor": "ui-test", "note": "durable"},
+        )
+        self.assertEqual(action_status, 200)
+        self.assertEqual(event["action"], "dismiss")
+        self.assertEqual(event["effect_scope"], "local_sqlite_review_state_only")
+
+        with DurableReviewStore(self.db_path) as reopened:
+            self.assertEqual(reopened.get_item(item_id).status, "actioned")
+            events = reopened.list_audit_events(item_id)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].actor, "ui-test")
+        self.assertEqual(events[0].note, "durable")
+
+
+class LocalUICLIValidationTests(unittest.TestCase):
+    def test_fail_closed_when_neither_sample_data_nor_db_is_selected(self):
+        with self.assertRaisesRegex(SystemExit, "Choose exactly one"):
+            validate_mode_args(sample_data=False, db_path=None)
+
+    def test_fail_closed_when_both_sample_data_and_db_are_selected(self):
+        with self.assertRaisesRegex(SystemExit, "Choose exactly one"):
+            validate_mode_args(sample_data=True, db_path="botfucker_review.sqlite3")
 
 
 class LocalUIRenderingSafetyTests(unittest.TestCase):
