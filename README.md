@@ -7,14 +7,20 @@
 
 BotFucker is a small Python automation project for filtering unsolicited sales outreach, generic AI-generated pitches, and repeated CRM follow-ups from an IMAP mailbox.
 
-The project is intentionally simple: standard-library Python, readable regex rules, a local domain blacklist, and a whitelist for people or domains that should never be filtered.
+The project is intentionally simple: standard-library Python, readable regex rules, a local domain blacklist, a local SQLite sender-history database, and a whitelist for people or domains that should never be filtered.
 
 
 ## BotFucker v2 Direction
 
-The current script is a proof-of-concept. The planned v2 is an AI-assisted inbox defense and consent-enforcement workflow with human approval, sender history, strike levels, and n8n/webhook integration.
+The v2 core is now split into reusable modules under `botfucker/`:
 
-See [DESIGN.md](DESIGN.md) for the proposed architecture.
+- `models.py` normalizes provider-specific mail into stable input/output objects.
+- `classifier.py` returns structured deterministic classifications with reasons.
+- `history.py` tracks sender history, warning counts, and strike levels in SQLite.
+- `responses.py` contains human-reviewable warning templates.
+- `cli.py` keeps the IMAP proof-of-concept behavior behind the existing wrapper.
+
+See [DESIGN.md](DESIGN.md) for the proposed architecture and roadmap.
 
 ## What It Does
 
@@ -22,10 +28,12 @@ See [DESIGN.md](DESIGN.md) for the proposed architecture.
 - Scans unread messages from the last 24 hours.
 - Detects common cold outreach phrases like "quick call", "scale your business", and "wondering if you saw my last".
 - Looks for generic AI-pitch markers such as overly formal structure, vague value propositions, and missing personal references.
-- Sends one professional notice of non-consent to flagged senders.
-- Moves flagged messages to `Junk/Sales`.
-- Adds the sender domain to a local blacklist.
-- Deletes future unread messages from blacklisted domains without replying.
+- Produces structured classification results with reasons and recommended actions.
+- Tracks sender/domain history and strike levels locally in SQLite.
+- Sends one professional notice of non-consent to flagged senders only in live mode.
+- Moves flagged messages to `Junk/Sales` only in live mode.
+- Adds the sender domain to a local blacklist only in live mode.
+- Deletes future unread messages from blacklisted domains only in live mode.
 - Skips all whitelisted contacts and domains.
 
 ## Safety First
@@ -38,6 +46,7 @@ Dry-run mode logs what it would do, but does not:
 - move email
 - delete email
 - update `blacklist.txt`
+- send warning replies without explicit `--live`
 
 Use `--live` only after testing the filters on your own mailbox.
 
@@ -99,6 +108,7 @@ Optional settings:
 export BF_INBOX_FOLDER="INBOX"
 export BF_SALES_FOLDER="Junk/Sales"
 export BF_BLACKLIST_FILE="blacklist.txt"
+export BF_HISTORY_DB="botfucker_history.sqlite3"
 ```
 
 ## Common Provider Settings
@@ -126,22 +136,34 @@ BF_SMTP_HOST=smtp.mail.yahoo.com
 
 ## Test Before Going Live
 
-Compile-check the script:
+Compile-check the script and package:
 
 ```bash
-python -m py_compile outreach_filter.py
+python3 -m py_compile outreach_filter.py botfucker/*.py
+```
+
+Run the unit tests. Tests use fake emails only and do not send mail:
+
+```bash
+python3 -m unittest discover -s tests -v
 ```
 
 Run a dry scan:
 
 ```bash
-python outreach_filter.py
+python3 outreach_filter.py
 ```
 
-Run live only after reviewing the dry-run output:
+Emit dry-run/review output as JSON lines:
 
 ```bash
-python outreach_filter.py --live
+python3 outreach_filter.py --json
+```
+
+Run live only after reviewing the dry-run output. Live mode can send replies, move messages, and update blacklist/history state:
+
+```bash
+python3 outreach_filter.py --live
 ```
 
 ## Scheduling
@@ -161,7 +183,7 @@ Arguments: C:\path\to\BotFucker\outreach_filter.py --live
 
 ## Tuning The Filters
 
-The filter lists live near the top of `outreach_filter.py`:
+The filter lists live in `botfucker/classifier.py`:
 
 - `COLD_OUTREACH_PATTERNS`
 - `AI_SIGNATURE_PATTERNS`

@@ -4,6 +4,8 @@ __pycache__/
 .env
 .env.*
 blacklist.txt
+botfucker_history.sqlite3
+*.sqlite3
 .DS_Store
 .vscode/
 .idea/
