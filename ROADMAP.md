@@ -10,7 +10,7 @@ AI is excellent when builders use it to build. It is garbage when lead-gen paras
 
 ## Current State
 
-Merged through PR #7:
+Merged through PR #8:
 
 - v2 design document
 - reusable `botfucker/` Python package
@@ -25,7 +25,10 @@ Merged through PR #7:
 - durable review CLI and audit log
 - normalized n8n/webhook import contract
 - n8n workflow package and mapping guide
+- provider auth boundary plan
 - tests for classifier/history/safety/review/webhook/docs behavior
+
+The repo is ready to pull locally into Kodex/Codex and demonstrate the local cockpit without connecting to any live mail provider.
 
 ## Product Direction
 
@@ -36,8 +39,9 @@ BotFucker should become a small but serious inbox-defense app:
 - sender/domain strike history
 - drafted warning responses
 - approval-first workflow by default
+- approved-action export for provider bridges
 - explicit guarded YOLO mode for users who want automation without review
-- OAuth/provider integrations for Gmail and Microsoft
+- OAuth/provider integrations for Gmail and Microsoft, later and behind the provider boundary
 - optional LLM classifier with strict structured output
 - n8n/webhook integration path
 
@@ -47,21 +51,26 @@ BotFucker should become a small but serious inbox-defense app:
    - BotFucker may classify, summarize, and draft.
    - Sending replies, blacklisting, deleting, or escalating requires approval unless YOLO mode is explicitly enabled.
 
-2. **YOLO mode must be explicit**
+2. **Provider boundary first**
+   - BotFucker core imports normalized JSON and exports approved intent.
+   - n8n or a future provider bridge owns credentials and provider-side execution.
+   - The local UI must never directly send, move, delete, archive, or mutate mailbox state.
+
+3. **YOLO mode must be explicit**
    - Disabled by default.
    - Requires scary confirmation copy.
    - Must include daily send limits, allowed classifications, confidence thresholds, audit logging, and an emergency off switch.
 
-3. **Credentials stay out of the repo**
+4. **Credentials stay out of the repo**
    - No secrets, no real mailbox exports, no private contact lists.
    - Use OAuth/provider credential stores where possible.
    - API keys must be server-side only.
 
-4. **Evidence over vibes**
+5. **Evidence over vibes**
    - Classifications must include reasons.
    - Review screens should show why BotFucker thinks something is spam/outreach.
 
-5. **Archive/quarantine before delete**
+6. **Archive/quarantine before delete**
    - Permanent deletion should never be the casual default.
 
 ## Phases
@@ -140,13 +149,11 @@ Delivered:
 - local CLI import command example
 - TDD coverage validating docs/workflow safety assumptions
 
-### Phase 7 — Provider Auth Planning Stub
+### Phase 7 — Provider Auth Boundary Plan ✅
 
-Status: in PR #8.
+Status: merged.
 
-Goal: document how provider auth and provider actions should arrive later without adding real OAuth or live mailbox side effects in this phase.
-
-Deliverables:
+Delivered:
 
 - n8n-first versus Direct OAuth tradeoff analysis
 - IMAP/SMTP fallback constraints
@@ -155,7 +162,7 @@ Deliverables:
 - approved action export shape
 - future n8n action bridge rules
 
-Non-goals:
+Non-goals preserved:
 
 - no Gmail OAuth implementation
 - no Microsoft OAuth implementation
@@ -163,14 +170,31 @@ Non-goals:
 - no YOLO mode
 - no send/move/delete provider calls
 
+### Phase 8 — Approved Action Export ⏭️
+
+Status: next recommended build.
+
+Goal: export human-approved local review/audit events as an idempotent JSON bundle that n8n or another provider bridge can consume later.
+
+Deliverables:
+
+- local-only `export-approved-actions` CLI command
+- export only approved audit events from SQLite
+- `since-audit-id` or equivalent cursor for idempotent exports
+- explicit action IDs / audit IDs for provider bridge deduplication
+- no provider credentials in exports
+- no provider-side execution in BotFucker core
+- documentation for importing the bundle into the future n8n action bridge
+
 Acceptance criteria:
 
-- Secrets never reach the browser.
-- Keys are not committed.
-- Provider action execution is separated from local review approval.
-- OAuth and key storage are documented clearly.
+- Unapproved, dismissed, sample-only, or unsafe actions are not exported.
+- Export output contains enough IDs for downstream idempotency.
+- Export output contains no secrets, OAuth tokens, passwords, raw private headers, or provider credentials.
+- The command does not call Gmail, Microsoft, IMAP, SMTP, n8n, or any live provider.
+- Tests prove approved-only export and provider-boundary behavior.
 
-### Phase 8 — Optional LLM Classifier
+### Phase 9 — Optional LLM Classifier
 
 Goal: improve classification quality without trusting email content blindly.
 
@@ -188,7 +212,7 @@ Acceptance criteria:
 - LLM output is validated before use.
 - Classifier reasons remain explainable.
 
-### Phase 9 — Guarded YOLO Mode
+### Phase 10 — Guarded YOLO Mode
 
 Goal: allow power users to automate replies/blocks while making footguns obvious.
 
@@ -208,9 +232,53 @@ Acceptance criteria:
 - Requires explicit confirmation.
 - Never silently enables aggressive/legal-ish replies.
 
+## Local Kodex/Codex Demo Plan
+
+Kent is pulling this locally onto Kodex/Codex next. The demo should show what exists now, not pretend Phase 8 is already done. Revolutionary concept, apparently.
+
+### Pull and verify
+
+```bash
+git clone https://github.com/Jdelg718/BotFucker.git
+cd BotFucker
+python3 -m py_compile outreach_filter.py botfucker/*.py
+python3 -m unittest discover -s tests -v
+```
+
+### Demo the local cockpit with fake/local data
+
+```bash
+rm -f botfucker_review.sqlite3
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 seed-samples
+python3 -m botfucker.local_ui --host 127.0.0.1 --port 8765 --db botfucker_review.sqlite3
+```
+
+Open:
+
+```text
+http://127.0.0.1:8765/
+```
+
+Demo talking points:
+
+- the browser UI is local-only
+- sample seed data proves the review loop without live email access
+- approve/dismiss/whitelist/blacklist only mutates SQLite review state
+- sender history and audit views are durable
+- no provider credentials are present
+- no live mailbox actions are possible from the UI
+
+### Demonstrate the n8n boundary without activating live mail
+
+```bash
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 import-webhook-json path/to/n8n-messages.json
+```
+
+Use fake or sanitized JSON only. Real mailbox payloads stay out of the repo.
+
 ## Near-Term Recommendation
 
-Next PR after Phase 7 should be **Approved Action Export**, not OAuth implementation.
+Next PR should be **Approved Action Export**, not OAuth implementation.
 
 Recommended scope:
 
@@ -221,3 +289,11 @@ Recommended scope:
 - add tests for no `--live`, no provider credentials, and no unapproved action export
 
 OAuth can wait until we know the exact action contract. Building OAuth first is how products become login screens with delusions of grandeur.
+
+## Team Utilization
+
+- **Amy**: orchestrates scope, keeps phases honest, and blocks shiny-object OAuth detours.
+- **Chip**: implements Phase 8 with strict TDD.
+- **Rex**: reviews security boundaries, export contents, secret stripping, and browser/provider isolation.
+- **Gus**: verifies CLI ergonomics, local demo steps, CI, and future n8n bridge usability.
+- **Fred**: researches Gmail/Microsoft/n8n provider action shapes only after the approved-action export contract is stable.
