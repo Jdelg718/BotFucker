@@ -1,0 +1,4 @@
+# Add domains here, one per line.
+# Keep your real blacklist.txt private and out of git.
+sales.example.com
+crm.example.net
