@@ -9,6 +9,13 @@ BotFucker is a small Python automation project for filtering unsolicited sales o
 
 The project is intentionally simple: standard-library Python, readable regex rules, a local domain blacklist, and a whitelist for people or domains that should never be filtered.
 
+
+## BotFucker v2 Direction
+
+The current script is a proof-of-concept. The planned v2 is an AI-assisted inbox defense and consent-enforcement workflow with human approval, sender history, strike levels, and n8n/webhook integration.
+
+See [DESIGN.md](DESIGN.md) for the proposed architecture.
+
 ## What It Does
 
 - Connects to an IMAP inbox.
