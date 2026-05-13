@@ -254,6 +254,27 @@ Accepted payload shapes include a single message object, a list of message objec
 
 See [docs/webhook-contract.md](docs/webhook-contract.md) for the JSON examples and n8n mapping guidance.
 
+## Phase 6 n8n Workflow Package
+
+Phase 6 adds an importable starter workflow and operator guide for the safe n8n path:
+
+- [`docs/n8n-workflow.json`](docs/n8n-workflow.json) — inactive n8n workflow starter with a provider-fetch placeholder, normalization node, file write, and local CLI import command.
+- [`docs/n8n-workflow.md`](docs/n8n-workflow.md) — setup, mapping, environment variables, smoke test, and safety checklist.
+
+The workflow keeps the same provider boundary as the webhook contract: n8n fetches mail and BotFucker imports bounded JSON into local SQLite review state. It does not send, move, delete, archive, whitelist, blacklist, or run live mailbox actions.
+
+Typical local loop:
+
+```bash
+export BOTFUCKER_REPO="/path/to/BotFucker"
+export BOTFUCKER_REVIEW_DB="/path/to/botfucker_review.sqlite3"
+export BOTFUCKER_N8N_MESSAGES="/path/to/n8n-messages.json"
+
+cd "$BOTFUCKER_REPO"
+python3 -m botfucker.review_cli --db "$BOTFUCKER_REVIEW_DB" import-webhook-json "$BOTFUCKER_N8N_MESSAGES"
+python3 -m botfucker.local_ui --host 127.0.0.1 --port 8765 --db "$BOTFUCKER_REVIEW_DB"
+```
+
 ## Test Before Going Live
 
 Compile-check the script and package:

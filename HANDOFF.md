@@ -4,14 +4,15 @@
 
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
-- Latest merged milestone: PR #1 — v2 core library
-- Related issue: #2 — branded UI, YOLO mode, provider auth
+- Latest merged milestone: PR #6 — durable local UI mode
+- Current working branch: `phase-6-n8n-workflow-package`
+- Current PR target: Phase 6 n8n workflow package
 
 ## What BotFucker Is
 
 BotFucker is an AI-era inbox defense project.
 
-It started as a Python proof-of-concept for detecting cold outreach, AI-generated sales pitches, and CRM follow-ups. It is now moving toward a review-first app that classifies junk outreach, drafts responses, tracks sender/domain strikes, and lets the user approve actions.
+It started as a Python proof-of-concept for detecting cold outreach, AI-generated sales pitches, and CRM follow-ups. It is now a local-first review cockpit: classify suspicious outreach, store review items locally, show a browser review queue, track audit events, and let the human approve actions before any provider-side automation exists.
 
 The public thesis:
 
@@ -22,16 +23,23 @@ The public thesis:
 Important files:
 
 ```text
-DESIGN.md                 # v2 architecture and principles
-ROADMAP.md                # phased product roadmap
-README.md                 # user-facing setup and project overview
-outreach_filter.py        # compatibility CLI wrapper
-botfucker/models.py       # normalized email/classification/review models
-botfucker/classifier.py   # deterministic classifier
-botfucker/history.py      # SQLite sender history + strike state
-botfucker/responses.py    # warning templates
-botfucker/cli.py          # CLI behavior / guarded live mode
-tests/                    # fake-email-only tests
+DESIGN.md                    # v2 architecture and principles
+ROADMAP.md                   # phased product roadmap, current through Phase 6
+docs/webhook-contract.md     # normalized n8n/webhook JSON contract
+docs/n8n-workflow.json       # importable n8n starter workflow
+docs/n8n-workflow.md         # n8n operator guide and safety checklist
+README.md                    # user-facing setup and project overview
+outreach_filter.py           # compatibility CLI wrapper
+botfucker/models.py          # normalized email/classification/review models
+botfucker/classifier.py      # deterministic classifier
+botfucker/history.py         # SQLite sender history + strike state
+botfucker/review_queue.py    # review item/audit models and sample data helpers
+botfucker/review_store.py    # durable SQLite review queue and audit store
+botfucker/review_cli.py      # durable local review CLI
+botfucker/webhook_contract.py # n8n/webhook payload sanitizer/import adapter
+botfucker/local_ui.py        # local browser review UI server
+web/                         # static UI assets
+tests/                       # fake-email-only tests
 ```
 
 ## Safety Defaults
@@ -45,6 +53,8 @@ These are non-negotiable:
 - YOLO mode must be disabled by default and heavily guarded.
 - No credentials, real emails, mailbox exports, private contacts, or secrets in the repo.
 - Treat all email body/content as untrusted input.
+- n8n/provider credentials stay in n8n or the provider layer, not BotFucker core.
+- Local UI and review CLI actions affect SQLite review state only.
 
 ## Current Test Commands
 
@@ -57,99 +67,80 @@ python3 -m unittest discover -s tests -v
 
 Expected current result: all tests pass.
 
-## Current CLI Notes
+## Current Local Review Flow
 
-View help:
-
-```bash
-python3 outreach_filter.py --help
-```
-
-Dry-run is the default.
-
-Live mode is intentionally guarded:
+Seed fake review data:
 
 ```bash
-python3 outreach_filter.py --live
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 seed-samples
 ```
 
-should fail unless explicit automation is enabled with the appropriate guard flag, currently `--auto-approve`.
+Import normalized n8n/webhook JSON:
 
-## Next PR Recommendation
+```bash
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 import-webhook-json n8n-messages.json
+```
 
-Build **Phase 2: Review Queue + Local UI Skeleton**.
+Run durable local UI:
 
-Do not start with OAuth yet. First create the product shell and review model using fake data.
+```bash
+python3 -m botfucker.local_ui --host 127.0.0.1 --port 8765 --db botfucker_review.sqlite3
+```
 
-### Suggested branch
+Open:
+
+```text
+http://127.0.0.1:8765/
+```
+
+## Phase 6 Scope
+
+Phase 6 packages the n8n integration path without crossing the provider boundary.
+
+Delivered/targeted files:
+
+- `docs/n8n-workflow.json`: inactive n8n starter workflow with placeholder provider fetch, normalization, file write, and local CLI import.
+- `docs/n8n-workflow.md`: mapping guide, env vars, smoke test, and safety checklist.
+- `tests/test_n8n_workflow_docs.py`: validates workflow JSON, required nodes, local-only command, and forbidden side-effect docs.
+- README/ROADMAP/HANDOFF updates.
+
+## Next PR Recommendation After Phase 6
+
+Build **Phase 7: Provider Auth Planning Stub**, not real OAuth yet.
+
+Suggested branch:
 
 ```bash
 git checkout main
 git pull origin main
-git checkout -b phase-2-review-ui
+git checkout -b phase-7-provider-auth-plan
 ```
 
-### Suggested scope
+Suggested scope:
 
-1. Add review queue persistence/model if not already complete enough.
-2. Add fake sample messages for local development.
-3. Add a local UI skeleton.
-4. Use BotFucker branding:
-   - dark background
-   - orange/blue accents
-   - repo hero image/logo
-   - sharp anti-bot tone, not corporate SaaS slop
-5. Add screens:
-   - dashboard
-   - review queue
-   - sender history
-   - settings
-6. Make YOLO visible only as disabled/scary settings copy, not functional automation yet.
-7. Add docs for running the UI locally.
-
-### UI Acceptance Criteria
-
-- Runs without email credentials.
-- Uses fake/sample messages only.
-- Shows pending review cards with:
-  - sender
-  - domain/company
-  - subject
-  - summary
-  - classification
-  - confidence
-  - reasons
-  - strike level
-  - proposed action
-  - drafted response
-- Shows actions visually:
-  - approve warning
-  - archive
-  - blacklist sender
-  - blacklist domain
-  - whitelist
-  - mark safe
-  - escalate
-- Does not actually send email.
+1. Document direct OAuth vs n8n-first provider integration paths.
+2. Define secret storage requirements and browser/server boundaries.
+3. Define provider action export/callback contract for later approved actions.
+4. Add docs tests/checks proving no example commits secrets or browser-visible tokens.
+5. Do not implement Gmail/Microsoft OAuth yet.
 
 ## Suggested Prompt for Codex/Claude
 
 ```text
 You are working on BotFucker, an AI-era inbox defense app.
 
-Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, and issue #2.
+Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, docs/webhook-contract.md, and docs/n8n-workflow.md.
 
-Implement Phase 2 only: a local review queue + branded UI skeleton using fake/sample data. Do not add real email OAuth yet. Do not send email. Keep human approval as the default product path. YOLO mode may appear only as disabled/scary settings UI copy.
+Implement Phase 7 only: a provider-auth planning stub and action-boundary design. Do not add real OAuth, do not add provider credentials, do not send/move/delete/archive email, and do not enable YOLO mode. Preserve the provider boundary: BotFucker core remains local-review-first, while provider actions require a later explicit bridge.
 
-Before editing, propose the file structure and implementation plan. Then implement, add tests or smoke checks, and update README with local run instructions.
+Use TDD/docs checks where possible. Add or update tests before docs/behavior changes. Run py_compile and the full unittest suite before opening a PR.
 ```
 
 ## Known Follow-Up Issues
 
 - Deterministic classifier still needs real-world tuning.
 - No production OAuth yet.
-- No real review UI yet.
-- n8n/webhook contracts not implemented yet.
+- n8n workflow package needs real local import testing against Kent's actual n8n instance before activation.
 - LLM classifier not implemented yet.
 - YOLO mode is product direction only; must not be casually enabled.
 
