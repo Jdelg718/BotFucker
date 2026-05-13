@@ -5,14 +5,14 @@
 </p>
 
 
-BotFucker is a small Python automation project for filtering unsolicited sales outreach, generic AI-generated pitches, and repeated CRM follow-ups from an IMAP mailbox.
+BotFucker is a local-first inbox defense cockpit for filtering unsolicited sales outreach, generic AI-generated pitches, and repeated CRM follow-ups without handing the keys to your mailbox to a half-baked robot.
 
-The project is intentionally simple: standard-library Python, readable regex rules, a local domain blacklist, a local SQLite sender-history database, and a whitelist for people or domains that should never be filtered.
+The project is intentionally simple: standard-library Python, deterministic classification, local SQLite review state, an audit trail, a browser review queue, and a strict provider boundary. BotFucker imports normalized mail-shaped JSON, lets a human review decisions locally, and saves provider-side execution for an explicit future bridge.
 
 
-## BotFucker v2 Direction
+## BotFucker Current Design
 
-The v2 core is now split into reusable modules under `botfucker/`:
+The current core is split into reusable modules under `botfucker/`:
 
 - `models.py` normalizes provider-specific mail into stable input/output objects.
 - `classifier.py` returns structured deterministic classifications with reasons.
@@ -27,40 +27,41 @@ See [DESIGN.md](DESIGN.md) for the proposed architecture and roadmap.
 
 ## What It Does
 
-- Connects to an IMAP inbox.
-- Scans unread messages from the last 24 hours.
+- Accepts normalized email-shaped input from local files, n8n/webhook exports, or the legacy IMAP proof-of-concept path.
 - Detects common cold outreach phrases like "quick call", "scale your business", and "wondering if you saw my last".
 - Looks for generic AI-pitch markers such as overly formal structure, vague value propositions, and missing personal references.
 - Produces structured classification results with reasons and recommended actions.
 - Tracks sender/domain history and strike levels locally in SQLite.
-- Drafts recommended warning actions for human review by default.
-- Sends notices, moves flagged messages, and updates blacklist state only when both `--live` and `--auto-approve` are supplied.
-- Marks strike-4 senders as `block_candidate` for review instead of sending the strike-3 warning endlessly.
-- Deletes future unread messages from explicitly blacklisted domains only in approved live automation mode.
-- Skips all whitelisted contacts and domains.
+- Persists a durable local review queue and audit log.
+- Runs a local browser cockpit for reviewing, approving, dismissing, whitelisting, or blacklisting items in local SQLite state.
+- Imports bounded n8n/webhook JSON after the provider layer has already fetched mail.
+- Keeps provider credentials and live mailbox side effects outside the local UI and review queue.
+- Leaves send/move/delete/archive provider actions for a future explicit action bridge.
 
 ## Safety First
 
-The script runs in dry-run mode by default.
+The current product path is local-review-first and fails closed.
 
-Dry-run mode logs what it would do, but does not:
+BotFucker does **not** need OAuth, IMAP passwords, SMTP passwords, or provider credentials to run the local review cockpit.
+
+Local UI and review CLI actions do not:
 
 - send replies
 - move email
 - delete email
-- update `blacklist.txt`
-- send warning replies without explicit `--live --auto-approve`
+- archive email
+- call Gmail/Microsoft/IMAP/SMTP
+- update a real provider whitelist or blacklist
+- expose secrets in the browser
 
-`--live` by itself fails closed. Use `--auto-approve` only after testing the filters on your own mailbox and accepting legacy YOLO-style automation.
+The legacy IMAP scanner still exists behind `outreach_filter.py`, but live automation requires both `--live` and `--auto-approve`. The preferred current path is n8n/provider fetch → normalized JSON → local SQLite review → human decision → future approved-action export.
 
 ## Requirements
 
 - Python 3.10 or newer
-- An email account with IMAP enabled
-- SMTP access for sending replies
-- An app password if your provider requires one
-
-No third-party Python packages are required.
+- No third-party Python packages required
+- Optional: n8n or another provider-side workflow to fetch mail and write normalized JSON
+- Optional legacy path: an email account with IMAP/SMTP access if you are intentionally using `outreach_filter.py` directly
 
 ## Setup
 
@@ -71,13 +72,35 @@ git clone https://github.com/Jdelg718/BotFucker.git
 cd BotFucker
 ```
 
-Create a local blacklist file:
+Create a local blacklist file if you plan to use the legacy scanner:
 
 ```bash
 cp blacklist.example.txt blacklist.txt
 ```
 
-Configure environment variables.
+## Quick Local Demo
+
+The current recommended demo path uses fake/local data only. No mailbox credentials, OAuth tokens, or provider setup required.
+
+```bash
+python3 -m py_compile outreach_filter.py botfucker/*.py
+python3 -m unittest discover -s tests -v
+rm -f botfucker_review.sqlite3
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 seed-samples
+python3 -m botfucker.local_ui --host 127.0.0.1 --port 8765 --db botfucker_review.sqlite3
+```
+
+Open:
+
+```text
+http://127.0.0.1:8765/
+```
+
+This demonstrates the local cockpit, durable review queue, sender history, and audit trail without touching a live inbox. Which is the sane order. Weird how that keeps coming up.
+
+## Optional Legacy IMAP/SMTP Setup
+
+Only configure these environment variables if you are intentionally using the older `outreach_filter.py` IMAP/SMTP path. They are not needed for the local review UI, n8n import workflow, or current provider-boundary design.
 
 Linux/macOS:
 
@@ -288,6 +311,21 @@ Phase 7 does **not** implement Gmail OAuth, Microsoft OAuth, IMAP password handl
 - browser/server boundaries
 - approved action export shape
 - future n8n action bridge rules
+
+## Next: Phase 8 Approved Action Export
+
+The next recommended build is **Approved Action Export**, not OAuth.
+
+The goal is to export human-approved SQLite audit/review decisions as an idempotent JSON bundle that n8n or a future provider bridge can consume later.
+
+Planned constraints:
+
+- export approved intent only
+- include audit IDs/action IDs for downstream deduplication
+- support a cursor such as `--since-audit-id`
+- omit secrets, OAuth tokens, passwords, raw private headers, and provider credentials
+- do not call Gmail, Microsoft, IMAP, SMTP, n8n, or any live provider from BotFucker core
+- keep browser UI actions local-only
 
 ## Test Before Going Live
 
