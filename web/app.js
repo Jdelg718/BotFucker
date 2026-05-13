@@ -22,18 +22,57 @@ async function postJSON(path, payload) {
   return data;
 }
 
+function clear(element) {
+  element.replaceChildren();
+}
+
+function el(tagName, options = {}, ...children) {
+  const element = document.createElement(tagName);
+  if (options.className) element.className = options.className;
+  if (options.dataset) {
+    Object.entries(options.dataset).forEach(([key, value]) => {
+      element.dataset[key] = String(value);
+    });
+  }
+  if (options.disabled) element.disabled = true;
+  children.forEach((child) => appendTextOrNode(element, child));
+  return element;
+}
+
+function appendTextOrNode(parent, child) {
+  if (child === null || child === undefined || child === false) return;
+  if (child instanceof Node) {
+    parent.appendChild(child);
+    return;
+  }
+  parent.appendChild(document.createTextNode(String(child)));
+}
+
+function appendLabeledText(parent, label, value) {
+  const strong = el("strong");
+  strong.textContent = label;
+  parent.appendChild(strong);
+  parent.appendChild(document.createTextNode(value));
+}
+
 function metric(label, value) {
-  return `<div class="metric"><strong>${value}</strong><span>${label}</span></div>`;
+  const strong = el("strong");
+  strong.textContent = value;
+  const span = el("span");
+  span.textContent = label;
+  return el("div", { className: "metric" }, strong, span);
 }
 
 function renderDashboard(data) {
   const counts = data.counts;
-  document.querySelector("#metrics").innerHTML = [
+  const metrics = document.querySelector("#metrics");
+  clear(metrics);
+  metrics.append(
     metric("total sample items", counts.total_review_items),
     metric("pending human review", counts.pending_review_items),
     metric("mock actions taken", counts.actioned_review_items),
     metric("audit events", counts.audit_events),
-  ].join("");
+  );
 }
 
 function actionClass(action) {
@@ -44,25 +83,65 @@ function actionClass(action) {
 
 function renderQueue(items) {
   const queue = document.querySelector("#queue");
-  queue.innerHTML = items.map((item) => `
-    <article class="item">
-      <div class="item-header">
-        <div>
-          <h3>${item.subject}</h3>
-          <div class="meta">${item.from_name} &lt;${item.from_email}&gt; · ${item.sender_domain}</div>
-        </div>
-        <span class="pill ${item.status === "pending" ? "neutral" : "safe"}">${item.status}</span>
-      </div>
-      <p>${item.snippet}</p>
-      <div class="meta">${item.classification} · confidence ${Math.round(item.confidence * 100)}% · strike ${item.sender_strike_level}</div>
-      <ul class="reasons">${item.reasons.map((reason) => `<li>${reason}</li>`).join("")}</ul>
-      ${item.draft_reply ? `<p class="muted"><strong>Draft:</strong> ${item.draft_reply}</p>` : ""}
-      <p class="muted"><strong>Safety:</strong> ${item.safety_note}</p>
-      <div class="actions">
-        ${item.allowed_actions.map((action) => `<button class="${actionClass(action)}" data-item-id="${item.item_id}" data-action="${action}" ${item.status !== "pending" ? "disabled" : ""}>${actionLabels[action] || action}</button>`).join("")}
-      </div>
-    </article>
-  `).join("");
+  clear(queue);
+
+  items.forEach((item) => {
+    const title = el("h3");
+    title.textContent = item.subject;
+
+    const senderMeta = el("div", { className: "meta" });
+    senderMeta.textContent = `${item.from_name} <${item.from_email}> · ${item.sender_domain}`;
+
+    const heading = el("div", {}, title, senderMeta);
+    const statusClass = item.status === "pending" ? "neutral" : "safe";
+    const status = el("span", { className: `pill ${statusClass}` });
+    status.textContent = item.status;
+
+    const snippet = el("p");
+    snippet.textContent = item.snippet;
+
+    const classification = el("div", { className: "meta" });
+    classification.textContent = `${item.classification} · confidence ${Math.round(item.confidence * 100)}% · strike ${item.sender_strike_level}`;
+
+    const reasons = el("ul", { className: "reasons" });
+    item.reasons.forEach((reason) => {
+      const row = el("li");
+      row.textContent = reason;
+      reasons.appendChild(row);
+    });
+
+    const article = el(
+      "article",
+      { className: "item" },
+      el("div", { className: "item-header" }, heading, status),
+      snippet,
+      classification,
+      reasons,
+    );
+
+    if (item.draft_reply) {
+      const draft = el("p", { className: "muted" });
+      appendLabeledText(draft, "Draft:", ` ${item.draft_reply}`);
+      article.appendChild(draft);
+    }
+
+    const safety = el("p", { className: "muted" });
+    appendLabeledText(safety, "Safety:", ` ${item.safety_note}`);
+    article.appendChild(safety);
+
+    const actions = el("div", { className: "actions" });
+    item.allowed_actions.forEach((action) => {
+      const button = el("button", {
+        className: actionClass(action),
+        dataset: { itemId: item.item_id, action },
+        disabled: item.status !== "pending",
+      });
+      button.textContent = actionLabels[action] || action;
+      actions.appendChild(button);
+    });
+    article.appendChild(actions);
+    queue.appendChild(article);
+  });
 
   queue.querySelectorAll("button[data-action]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -79,14 +158,23 @@ function renderQueue(items) {
 }
 
 function renderSenders(senders) {
-  document.querySelector("#sender-history").innerHTML = senders.map((sender) => `
-    <div class="sender">
-      <strong>${sender.sender}</strong>
-      <div class="meta">domain ${sender.sender_domain} · messages ${sender.message_count} · max strike ${sender.max_strike_level}</div>
-      <div class="meta">classifications: ${sender.classifications.join(", ") || "none"}</div>
-      <div class="meta">last mock action: ${sender.last_mock_action || "none"}</div>
-    </div>
-  `).join("");
+  const container = document.querySelector("#sender-history");
+  clear(container);
+  senders.forEach((sender) => {
+    const name = el("strong");
+    name.textContent = sender.sender;
+
+    const summary = el("div", { className: "meta" });
+    summary.textContent = `domain ${sender.sender_domain} · messages ${sender.message_count} · max strike ${sender.max_strike_level}`;
+
+    const classifications = el("div", { className: "meta" });
+    classifications.textContent = `classifications: ${sender.classifications.join(", ") || "none"}`;
+
+    const lastAction = el("div", { className: "meta" });
+    lastAction.textContent = `last mock action: ${sender.last_mock_action || "none"}`;
+
+    container.appendChild(el("div", { className: "sender" }, name, summary, classifications, lastAction));
+  });
 }
 
 function renderSettings(settings) {
@@ -96,17 +184,33 @@ function renderSettings(settings) {
 
 function renderAudit(events) {
   const container = document.querySelector("#audit-events");
+  clear(container);
   if (!events.length) {
-    container.innerHTML = `<p class="muted">No mock actions recorded yet.</p>`;
+    const empty = el("p", { className: "muted" });
+    empty.textContent = "No mock actions recorded yet.";
+    container.appendChild(empty);
     return;
   }
-  container.innerHTML = events.map((event) => `
-    <div class="event">
-      <strong>${event.action}</strong> on ${event.item_id}
-      <div class="meta">${event.created_at} · ${event.actor} · ${event.effect_scope}</div>
-      <div class="meta">${event.safety_note}</div>
-    </div>
-  `).join("");
+
+  events.forEach((event) => {
+    const action = el("strong");
+    action.textContent = event.action;
+
+    const title = el("div", {}, action, ` on ${event.item_id}`);
+    const meta = el("div", { className: "meta" });
+    meta.textContent = `${event.created_at} · ${event.actor} · ${event.effect_scope}`;
+
+    const safety = el("div", { className: "meta" });
+    safety.textContent = event.safety_note;
+
+    if (event.note) {
+      const note = el("div", { className: "meta" });
+      note.textContent = event.note;
+      container.appendChild(el("div", { className: "event" }, title, meta, safety, note));
+      return;
+    }
+    container.appendChild(el("div", { className: "event" }, title, meta, safety));
+  });
 }
 
 async function refresh() {
@@ -125,5 +229,7 @@ async function refresh() {
 }
 
 refresh().catch((error) => {
-  document.body.insertAdjacentHTML("afterbegin", `<pre class="panel">Failed to load local UI data: ${error.message}</pre>`);
+  const panel = el("pre", { className: "panel" });
+  panel.textContent = `Failed to load local UI data: ${error.message}`;
+  document.body.prepend(panel);
 });

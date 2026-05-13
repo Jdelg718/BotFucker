@@ -21,6 +21,10 @@ YOLO_COPY = (
     "YOLO mode lets BotFucker reply/block without asking you first. This can save time and also make you look "
     "like an unhinged mailbox goblin if configured badly. Start conservative."
 )
+SECURITY_HEADERS = {
+    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'",
+    "X-Content-Type-Options": "nosniff",
+}
 
 
 @dataclass
@@ -119,6 +123,10 @@ def make_handler(state: LocalUIState):
                 return
             self._send_json(event.to_dict())
 
+        def _send_security_headers(self) -> None:
+            for name, value in SECURITY_HEADERS.items():
+                self.send_header(name, value)
+
         def _serve_asset(self, path: str) -> None:
             if path in ("", "/"):
                 asset = WEB_DIR / "index.html"
@@ -135,6 +143,7 @@ def make_handler(state: LocalUIState):
             data = asset.read_bytes()
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", content_type)
+            self._send_security_headers()
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Connection", "close")
             self.end_headers()
@@ -145,6 +154,7 @@ def make_handler(state: LocalUIState):
             data = json.dumps(payload, indent=2, sort_keys=True).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
+            self._send_security_headers()
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Connection", "close")
