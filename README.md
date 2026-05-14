@@ -418,6 +418,42 @@ Safety constraints:
 - invalid output or provider failure falls back to deterministic classification
 - no OAuth, provider credentials, send/move/delete/archive actions, or YOLO behavior are added by this feature
 
+## Phase 11 Guarded YOLO Mode
+
+Phase 11 adds fail-closed guardrails for the legacy live automation path. This does **not** add OAuth, provider credentials, or new provider mutation features. It makes the existing `--live --auto-approve` path harder to trigger accidentally, because apparently “please don’t automate my inbox into a crater” needs code.
+
+Guardrail primitive:
+
+```python
+from botfucker.yolo_policy import YoloPolicy, evaluate_yolo_decision
+```
+
+Live mode now requires a YOLO policy before provider actions are allowed. The policy gates each provider action with:
+
+- `enabled=True`
+- exact confirmation phrase: `I ACCEPT BOTFUCKER YOLO RISK`
+- emergency stop must be off
+- provider action must be allowlisted
+- classification must be allowlisted
+- confidence must meet `min_confidence`
+- daily action count must remain below `daily_action_limit`
+- reply tone must be allowlisted
+
+Environment variables for the legacy CLI path:
+
+```bash
+export BF_YOLO_ENABLED=true
+export BF_YOLO_CONFIRMATION="I ACCEPT BOTFUCKER YOLO RISK"
+export BF_YOLO_ALLOWED_ACTIONS="send_warning,write_blacklist,move_to_sales"
+export BF_YOLO_ALLOWED_CLASSIFICATIONS="cold_outreach,ai_generated_pitch,crm_followup"
+export BF_YOLO_MIN_CONFIDENCE=0.90
+export BF_YOLO_DAILY_ACTION_LIMIT=10
+export BF_YOLO_REPLY_TONE="firm_professional"
+export BF_YOLO_EMERGENCY_STOP=false
+```
+
+If any gate fails, BotFucker raises before the live provider action. Subtle? No. That is the point.
+
 ## Test Before Going Live
 
 Compile-check the script and package:
@@ -444,7 +480,7 @@ Emit dry-run/review output as JSON lines:
 python3 outreach_filter.py --json
 ```
 
-Run live automation only after reviewing the dry-run output. `--live` must be paired with explicit approval before the tool can send replies, move messages, delete blacklisted messages, or update blacklist/history state:
+Run live automation only after reviewing the dry-run output. `--live` must be paired with explicit `--auto-approve` **and** passing `BF_YOLO_*` guardrails before the tool can send replies, move messages, delete blacklisted messages, or update blacklist/history state:
 
 ```bash
 python3 outreach_filter.py --live --auto-approve
@@ -452,7 +488,7 @@ python3 outreach_filter.py --live --auto-approve
 
 ## Scheduling
 
-Run every 15 minutes with cron:
+Run every 15 minutes with cron only after configuring YOLO guardrails and confirming the dry-run output. If `BF_YOLO_EMERGENCY_STOP=true`, live actions fail closed.
 
 ```cron
 */15 * * * * cd /path/to/BotFucker && /usr/bin/python3 outreach_filter.py --live --auto-approve >> outreach_filter.log 2>&1

@@ -20,6 +20,7 @@ from .classifier import classify_message
 from .history import SenderHistory
 from .models import EmailMessage, decode_mime_header
 from .responses import warning_template
+from .yolo_policy import YoloPolicy, evaluate_yolo_decision
 
 
 @dataclass(frozen=True)
@@ -48,6 +49,33 @@ def env_required(name: str) -> str:
 def split_csv_env(name: str) -> set[str]:
     value = os.getenv(name, "")
     return {item.strip().lower() for item in value.split(",") if item.strip()}
+
+
+def env_flag(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_float(name: str, default: float) -> float:
+    value = os.getenv(name, "").strip()
+    return float(value) if value else default
+
+
+def env_int(name: str, default: int) -> int:
+    value = os.getenv(name, "").strip()
+    return int(value) if value else default
+
+
+def build_yolo_policy_from_env() -> YoloPolicy:
+    return YoloPolicy(
+        enabled=env_flag("BF_YOLO_ENABLED"),
+        emergency_stop=env_flag("BF_YOLO_EMERGENCY_STOP"),
+        confirmation_phrase=os.getenv("BF_YOLO_CONFIRMATION", ""),
+        allowed_actions=split_csv_env("BF_YOLO_ALLOWED_ACTIONS"),
+        allowed_classifications=split_csv_env("BF_YOLO_ALLOWED_CLASSIFICATIONS"),
+        min_confidence=env_float("BF_YOLO_MIN_CONFIDENCE", 0.9),
+        daily_action_limit=env_int("BF_YOLO_DAILY_ACTION_LIMIT", 0),
+        reply_tone=os.getenv("BF_YOLO_REPLY_TONE", "firm_professional").strip().lower() or "firm_professional",
+    )
 
 
 def load_config() -> Config:
@@ -134,13 +162,22 @@ def send_notice_reply(config: Config, original_message: Message, sender: str, st
         smtp.send_message(reply)
 
 
-def process_inbox(config: Config, live: bool, json_output: bool = False, auto_approve: bool = False) -> None:
+def process_inbox(
+    config: Config,
+    live: bool,
+    json_output: bool = False,
+    auto_approve: bool = False,
+    yolo_policy: YoloPolicy | None = None,
+) -> None:
     if live and not auto_approve:
         raise RuntimeError("--live requires --auto-approve before replies, moves, deletes, or blacklist writes are performed")
+    if live and yolo_policy is None:
+        raise RuntimeError("YOLO guardrails are required before live provider actions")
 
     blacklist = load_blacklist(config.blacklist_file)
     cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-    mode = "LIVE/AUTO-APPROVE" if live else "DRY-RUN"
+    mode = "LIVE/AUTO-APPROVE/YOLO-GUARDED" if live else "DRY-RUN"
+    yolo_actions_taken = 0
 
     with SenderHistory(config.history_db) as history, imaplib.IMAP4_SSL(config.imap_host, config.imap_port) as imap:
         imap.login(config.email_address, config.email_password)
@@ -172,6 +209,13 @@ def process_inbox(config: Config, live: bool, json_output: bool = False, auto_ap
                 history.record_classification(normalized, result)
                 _emit(mode, "blacklist_match", normalized, result, json_output)
                 if live:
+                    _require_yolo_allowed(
+                        yolo_policy,
+                        classification=result,
+                        provider_action="delete_message",
+                        daily_action_count=yolo_actions_taken,
+                    )
+                    yolo_actions_taken += 1
                     delete_message(imap, uid)
                 continue
 
@@ -193,6 +237,14 @@ def process_inbox(config: Config, live: bool, json_output: bool = False, auto_ap
 
                 if live:
                     strike_level = min(domain_strike_level + 1, 3)
+                    for provider_action in ("send_warning", "write_blacklist", "move_to_sales"):
+                        _require_yolo_allowed(
+                            yolo_policy,
+                            classification=result,
+                            provider_action=provider_action,
+                            daily_action_count=yolo_actions_taken,
+                        )
+                        yolo_actions_taken += 1
                     send_notice_reply(config, raw_message, sender, strike_level)
                     history.issue_warning(sender, strike_level)
                     append_to_blacklist(sender_domain, config.blacklist_file)
@@ -203,6 +255,25 @@ def process_inbox(config: Config, live: bool, json_output: bool = False, auto_ap
         if live:
             imap.expunge()
         imap.logout()
+
+
+def _require_yolo_allowed(
+    yolo_policy: YoloPolicy | None,
+    *,
+    classification: object,
+    provider_action: str,
+    daily_action_count: int,
+) -> None:
+    if yolo_policy is None:
+        raise RuntimeError("YOLO guardrails are required before live provider actions")
+    decision = evaluate_yolo_decision(
+        yolo_policy,
+        classification=classification,
+        provider_action=provider_action,
+        daily_action_count=daily_action_count,
+    )
+    if not decision.allowed:
+        raise RuntimeError("YOLO guardrail blocked live provider action: " + "; ".join(decision.reasons))
 
 
 def _emit(mode: str, event: str, message: EmailMessage, result: object | None, json_output: bool) -> None:
@@ -239,7 +310,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--auto-approve",
         action="store_true",
-        help="Explicitly approve legacy automation for warnings, moves, deletes, and blacklist writes.",
+        help="Explicitly approve legacy automation for warnings, moves, deletes, and blacklist writes. In live mode this still requires BF_YOLO_* guardrails.",
     )
     parser.add_argument(
         "--json",
@@ -251,4 +322,5 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    process_inbox(load_config(), live=args.live, json_output=args.json, auto_approve=args.auto_approve)
+    yolo_policy = build_yolo_policy_from_env() if args.live else None
+    process_inbox(load_config(), live=args.live, json_output=args.json, auto_approve=args.auto_approve, yolo_policy=yolo_policy)
