@@ -1,0 +1,83 @@
+{
+  "name": "BotFucker Approved Action Bridge Dry Run",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-840, 0]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "={{ $env.BOTFUCKER_APPROVED_ACTIONS || 'approved-actions.json' }}",
+        "options": {}
+      },
+      "id": "read-approved-actions-json",
+      "name": "Read approved-actions.json",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [-600, 0],
+      "notes": "Reads the approved-action export created by BotFucker review_cli. Dry-run bridge only."
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst first = rows[0] || {};\nlet bundle = first.json || {};\nif (Array.isArray(bundle)) {\n  bundle = bundle[0] || {};\n}\nif (bundle.schema !== 'botfucker.approved_actions.v1') {\n  throw new Error(`Unexpected BotFucker approved action schema: ${bundle.schema || 'missing'}`);\n}\nif (bundle.safety_scope !== 'provider_action_export_only') {\n  throw new Error('Approved action bundle safety_scope must be provider_action_export_only');\n}\nconst processedRaw = $env.BOTFUCKER_PROCESSED_AUDIT_IDS || '';\nconst processedAuditIds = new Set(processedRaw.split(',').map((value) => value.trim()).filter(Boolean));\nconst actions = Array.isArray(bundle.actions) ? bundle.actions : [];\nconst validActions = actions.filter((action) => {\n  if (!action.audit_id || processedAuditIds.has(action.audit_id)) return false;\n  if (action.provider_execution !== 'not_performed') return false;\n  if (action.safety_scope !== 'provider_action_export_only') return false;\n  if (action.approved_action !== 'approve_warning') return false;\n  return true;\n});\nreturn validActions.map((action) => ({\n  json: {\n    ...action,\n    dry_run: true,\n    bridge_status: 'validated_not_executed',\n    dedupe_key: action.audit_id\n  }\n}));"
+      },
+      "id": "validate-and-dedupe-approved-actions",
+      "name": "Validate And Dedupe Approved Actions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-360, 0],
+      "notes": "Validates botfucker.approved_actions.v1, filters already processed audit_id values, and keeps execution dry-run only."
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item) => {\n  const action = item.json || {};\n  return {\n    json: {\n      dry_run: true,\n      would_execute: action.approved_action,\n      audit_id: action.audit_id,\n      item_id: action.item_id,\n      provider: action.provider || 'local',\n      message_id: action.message_id || '',\n      thread_id: action.thread_id || '',\n      provider_execution: 'not_performed',\n      bridge_status: 'dry_run_logged_only'\n    }\n  };\n});"
+      },
+      "id": "dry-run-provider-action-log",
+      "name": "Dry Run Provider Action Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-120, 0],
+      "notes": "Logs what the future provider bridge would attempt. It does not execute mailbox changes."
+    },
+    {
+      "parameters": {
+        "content": "Approved action bridge dry run:\n- Reads approved-actions.json.\n- Requires schema botfucker.approved_actions.v1.\n- Dedupe key is audit_id.\n- Logs would_execute only.\n- No live provider action nodes are connected in this starter.",
+        "height": 260,
+        "width": 360
+      },
+      "id": "safety-boundary-notes",
+      "name": "Safety Boundary Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-600, -360]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Read approved-actions.json", "type": "main", "index": 0}]]
+    },
+    "Read approved-actions.json": {
+      "main": [[{"node": "Validate And Dedupe Approved Actions", "type": "main", "index": 0}]]
+    },
+    "Validate And Dedupe Approved Actions": {
+      "main": [[{"node": "Dry Run Provider Action Log", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "staticData": null,
+  "tags": [
+    {"name": "botfucker"},
+    {"name": "approved-action-bridge"},
+    {"name": "dry-run"}
+  ],
+  "active": false,
+  "versionId": "botfucker-approved-action-bridge-dry-run-v1"
+}

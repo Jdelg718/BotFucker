@@ -130,4 +130,4 @@ python3 -m botfucker.local_ui --db botfucker_review.sqlite3
 
 ## Next phase after this
 
-Once this workflow is tested locally, the next product phase should be an optional provider-side callback/action contract. That should still be approval-first: BotFucker records human intent, and n8n may later perform provider actions only from a separate, explicit action export. Keep the loaded gun in a different drawer. Preferably locked.
+The next provider-side step is now `docs/n8n-approved-action-bridge.json`: a separate dry-run workflow that consumes `approved-actions.json`, validates `botfucker.approved_actions.v1`, dedupes by `audit_id`, and logs would-execute actions only. Keep the loaded gun in a different drawer. Preferably locked.
