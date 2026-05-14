@@ -159,9 +159,9 @@ Do not add live provider whitelist/blacklist mutations.
 
 ## Next engineering step
 
-The next engineering step should be **Optional LLM Classifier**, not OAuth.
+The next engineering step should be **Guarded YOLO Mode design/guardrails**, not OAuth.
 
-Approved action export and the dry-run bridge contract now exist. Next, improve classification quality behind a strict provider abstraction, structured output validation, prompt-injection hardening, mocked provider tests, and a deterministic fallback.
+Approved action export, the dry-run bridge contract, and the optional LLM classifier hook now exist. Next, define hard safety gates before any unsupervised provider action can be considered: disabled-by-default settings, daily limits, confidence thresholds, allowlists, tone restrictions, audit logs, and an emergency off switch.
 
 ## Acceptance criteria for Phase 7
 

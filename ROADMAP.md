@@ -219,23 +219,28 @@ Acceptance criteria:
 - Provider credentials stay in n8n.
 - No provider action nodes are connected in the starter workflow.
 
-### Phase 10 — Optional LLM Classifier
+### Phase 10 — Optional LLM Classifier ✅
+
+Status: implemented on `phase-10-optional-llm-classifier`.
 
 Goal: improve classification quality without trusting email content blindly.
 
-Deliverables:
+Delivered:
 
-- provider abstraction
-- strict JSON schema
-- prompt-injection hardening
-- deterministic classifier fallback
+- optional `llm_provider` hook on `classify_message`
+- bounded prompt/payload with subject/body marked as untrusted input
+- no raw headers or credential-like provider material in LLM payloads
+- strict structured output validation for classification/action/confidence/reasons
+- deterministic classifier fallback when provider output is invalid or provider call fails
+- local safety-state bypass: whitelist and known-offender decisions do not call the LLM provider
 - tests using mocked provider responses
 
 Acceptance criteria:
 
 - Email content is treated as untrusted input.
 - LLM output is validated before use.
-- Classifier reasons remain explainable.
+- Classifier reasons remain explainable with `llm:` prefixes.
+- Provider failures and invalid model output fall back to deterministic rules.
 
 ### Phase 11 — Guarded YOLO Mode
 
@@ -303,23 +308,23 @@ Use fake or sanitized JSON only. Real mailbox payloads stay out of the repo.
 
 ## Near-Term Recommendation
 
-Next PR should be **Phase 10: Optional LLM Classifier**, not OAuth implementation.
+Next PR should be **Phase 11: Guarded YOLO Mode design/guardrails**, not OAuth implementation.
 
 Recommended scope:
 
-- add an optional classifier provider abstraction
-- use strict structured JSON output
-- treat message content as untrusted prompt-injection bait
-- validate LLM output before it affects classification
-- keep deterministic classifier fallback
-- use mocked provider responses in tests
+- explicit YOLO settings, disabled by default
+- daily send/action limits
+- classification allowlist and confidence thresholds
+- tone restrictions for any generated/sent reply
+- audit log and emergency off switch
+- tests proving YOLO cannot silently enable live provider actions
 
-OAuth can still wait. The bridge contract exists; now improve classification quality without making the mailbox a science experiment.
+OAuth can still wait. We now have the import path, approved-action export, dry-run bridge, and optional LLM classifier. Next is guardrails before any product even thinks about unsupervised provider mutation.
 
 ## Team Utilization
 
 - **Amy**: orchestrates scope, keeps phases honest, and blocks shiny-object OAuth detours.
-- **Chip**: owns optional LLM classifier implementation if we proceed.
-- **Rex**: reviews prompt-injection hardening, output validation, and provider-boundary isolation.
+- **Chip**: owns guarded YOLO-mode settings/guardrail implementation if we proceed.
+- **Rex**: reviews live-action safety gates, prompt-injection hardening, output validation, and provider-boundary isolation.
 - **Gus**: verifies CLI ergonomics, local demo steps, CI, and n8n docs usability.
-- **Fred**: researches model/provider fit for classifier quality only; no direct OAuth implementation yet.
+- **Fred**: researches safe automation limits and provider action constraints; no direct OAuth implementation yet.

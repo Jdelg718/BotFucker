@@ -390,6 +390,34 @@ Bridge constraints:
 - contains no Gmail, Microsoft, IMAP, SMTP, send-mail, move-mail, delete-mail, archive, or label mutation nodes in the starter
 - keeps provider credentials in n8n and out of BotFucker core
 
+## Phase 10 Optional LLM Classifier
+
+Phase 10 adds an optional provider hook for model-assisted classification without handing trust to the model like a raccoon with a badge.
+
+`classify_message(..., llm_provider=provider)` accepts a provider object with `classify(payload)` or a callable provider. The deterministic classifier still runs first as the baseline/fallback. Whitelisted and known-offender local safety states bypass the LLM entirely.
+
+Provider contract:
+
+```python
+{
+    "classification": "cold_outreach",
+    "confidence": 0.84,
+    "recommended_action": "warn_1",
+    "reasons": ["model saw sales intent", "model saw weak personalization"],
+}
+```
+
+Safety constraints:
+
+- subject/body are marked as untrusted input in the provider payload
+- body text is bounded before it reaches the provider
+- raw headers are not sent to the provider
+- output must use known classification/action values
+- confidence must be between `0` and `1`
+- reasons are normalized and prefixed with `llm:`
+- invalid output or provider failure falls back to deterministic classification
+- no OAuth, provider credentials, send/move/delete/archive actions, or YOLO behavior are added by this feature
+
 ## Test Before Going Live
 
 Compile-check the script and package:
