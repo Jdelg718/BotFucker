@@ -4,10 +4,10 @@
 
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
-- Latest merged milestone: Phase 8 approved action export (`feat: add approved action export`, PR #9)
-- Current working branch: `phase-9-n8n-approved-action-bridge`
-- Current PR target: Phase 9 n8n approved-action bridge dry run
-- Current local demo target: demonstrate local review cockpit on `127.0.0.1:8765`, approve sample items, export `approved-actions.json`, then dry-run the n8n action bridge contract
+- Latest merged milestone: Phase 9 n8n approved-action bridge dry run (`docs: add n8n approved action bridge dry run`, PR #10)
+- Current working branch: `phase-10-optional-llm-classifier`
+- Current PR target: Phase 10 optional LLM classifier
+- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, and dry-run n8n bridge contract
 - Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
 
 ## What BotFucker Is
@@ -26,7 +26,7 @@ Important files:
 
 ```text
 DESIGN.md                     # v2 architecture and principles
-ROADMAP.md                    # phased product roadmap, current through Phase 9 dry-run bridge implementation
+ROADMAP.md                    # phased product roadmap, current through Phase 10 optional LLM classifier
 docs/webhook-contract.md      # normalized n8n/webhook JSON contract
 docs/n8n-workflow.json        # importable n8n import starter workflow
 docs/n8n-workflow.md          # n8n import operator guide and safety checklist
@@ -115,10 +115,10 @@ git log --oneline -5
 Expected current top commit:
 
 ```text
-4e3ed02 feat: add approved action export (#9)
+757ed41 docs: add n8n approved action bridge dry run (#10)
 ```
 
-If this handoff update has been merged after that, the top commit will be newer. The important part is that PR #9 content is present.
+If this handoff update has been merged after that, the top commit will be newer. The important part is that PR #10 content is present.
 
 ### Verify locally
 
@@ -165,6 +165,7 @@ Say explicitly:
 - n8n is the credential buffer
 - approved-action export exists
 - current bridge work is dry-run/log-only, not live provider mutation
+- optional LLM classifier is provider-hooked and validated, with deterministic fallback
 
 ## Animated Explainer Demo
 
@@ -224,32 +225,22 @@ Delivered local-only `export-approved-actions`, approved-only SQLite audit expor
 
 ### Phase 9 — n8n Approved Action Bridge Dry Run
 
-Implemented on branch `phase-9-n8n-approved-action-bridge`.
+Delivered inactive `docs/n8n-approved-action-bridge.json`, operator guide, schema validation for `botfucker.approved_actions.v1`, `audit_id` dedupe, dry-run `would_execute` logs, and tests proving no live provider action nodes exist in the starter workflow.
+
+### Phase 10 — Optional LLM Classifier
+
+Implemented on branch `phase-10-optional-llm-classifier`.
 
 Delivered:
 
-1. Added inactive `docs/n8n-approved-action-bridge.json` workflow.
-2. Added `docs/n8n-approved-action-bridge.md` operator guide.
-3. Validates `botfucker.approved_actions.v1` bundles.
-4. Filters/dedupes by `audit_id`.
-5. Emits dry-run `would_execute` records only.
-6. Keeps `provider_execution: not_performed`.
-7. Contains no Gmail, Microsoft, IMAP, SMTP, send-mail, move-mail, delete-mail, archive, or label mutation nodes in the starter workflow.
-8. Added tests for bridge JSON validity, safety boundary, dedupe/schema logic, and docs coverage.
-
-Example flow:
-
-```bash
-python3 -m botfucker.review_cli --db botfucker_review.sqlite3 approve sample-001 --actor you
-python3 -m botfucker.review_cli --db botfucker_review.sqlite3 export-approved-actions > approved-actions.json
-```
-
-Then import `docs/n8n-approved-action-bridge.json` into n8n and set:
-
-```bash
-export BOTFUCKER_APPROVED_ACTIONS="/path/to/approved-actions.json"
-export BOTFUCKER_PROCESSED_AUDIT_IDS="audit-0001,audit-0002"
-```
+1. Added optional `llm_provider` hook to `classify_message`.
+2. Provider may be an object with `classify(payload)` or a callable.
+3. LLM payload marks subject/body as untrusted and bounds body text before provider handoff.
+4. Raw headers are not sent to the provider.
+5. LLM output is validated for known classification/action values, numeric confidence, and reasons.
+6. Invalid provider output and provider exceptions fall back to deterministic classification.
+7. Whitelisted and known-offender local safety states bypass the LLM provider.
+8. Added mocked-provider tests for valid output, prompt-injection payload boundary, invalid output fallback, provider exception fallback, and local safety-state bypass.
 
 Verification:
 
@@ -260,16 +251,16 @@ python3 -m unittest discover -s tests -v
 
 ## Next PR Recommendation
 
-Build **Phase 10: Optional LLM Classifier**, not OAuth.
+Build **Phase 11: Guarded YOLO Mode design/guardrails**, not OAuth.
 
 Suggested scope:
 
-1. Add optional classifier provider abstraction.
-2. Use strict structured JSON output.
-3. Treat message content as untrusted prompt-injection bait.
-4. Validate LLM output before it affects classification.
-5. Keep deterministic classifier fallback.
-6. Use mocked provider responses in tests.
+1. Explicit YOLO settings, disabled by default.
+2. Daily send/action limits.
+3. Classification allowlist and confidence thresholds.
+4. Tone restrictions for any generated/sent reply.
+5. Audit log and emergency off switch.
+6. Tests proving YOLO cannot silently enable live provider actions.
 
 ## Suggested Prompt for Kodex/Codex
 
@@ -278,36 +269,34 @@ You are working on BotFucker, an AI-era inbox defense app.
 
 Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, docs/webhook-contract.md, docs/n8n-workflow.md, docs/n8n-approved-action-bridge.md, and docs/provider-auth-plan.md.
 
-First, verify the current Phase 9 branch without changing behavior:
+First, verify the current Phase 10 branch without changing behavior:
 - run python3 -m py_compile outreach_filter.py botfucker/*.py
 - run python3 -m unittest discover -s tests -v
-- seed sample data with python3 -m botfucker.review_cli --db botfucker_review.sqlite3 seed-samples
-- approve one sample with python3 -m botfucker.review_cli --db botfucker_review.sqlite3 approve sample-001 --actor you
-- export approved actions with python3 -m botfucker.review_cli --db botfucker_review.sqlite3 export-approved-actions > approved-actions.json
-- inspect docs/n8n-approved-action-bridge.json and confirm it is inactive dry-run/log-only
+- inspect botfucker/classifier.py and tests/test_llm_classifier.py
+- confirm classify_message supports optional llm_provider only, with deterministic fallback
 
-Then review Phase 9 only: n8n Approved Action Bridge Dry Run.
+Then review Phase 10 only: Optional LLM Classifier.
 
-Check that the bridge consumes approved-actions.json, validates botfucker.approved_actions.v1, dedupes by audit_id, emits dry_run/would_execute output, contains no provider action nodes, and keeps provider credentials outside BotFucker core.
+Check that provider output is schema-validated, subject/body are treated as untrusted, raw headers are not sent to the provider, invalid output/provider exceptions fall back to deterministic rules, and whitelist/known-offender local safety state bypasses the LLM.
 
-Do not add real OAuth. Do not add provider credentials. Do not send, move, delete, archive, or mutate email. Do not enable YOLO mode. Preserve the provider boundary: BotFucker exports approved intent only; live provider execution belongs to a later explicit bridge.
+Do not add real OAuth. Do not add provider credentials. Do not send, move, delete, archive, or mutate email. Do not enable YOLO mode. Preserve the provider boundary: LLM classification may inform review only; live provider execution belongs to a separate explicit bridge.
 ```
 
 ## Team Plan
 
-- **Amy**: orchestration and scope control. She keeps the product from wandering into OAuth swamp country before the dry-run bridge is reviewed.
-- **Chip**: owns optional LLM classifier implementation if Phase 9 review passes.
-- **Rex**: security veto on bridge/export content, credential leakage, unapproved actions, browser-triggered side effects, XSS regressions, and prompt-injection hardening.
+- **Amy**: orchestration and scope control. She keeps the product from wandering into OAuth swamp country before guarded automation exists.
+- **Chip**: owns guarded YOLO-mode settings/guardrail implementation if Phase 10 review passes.
+- **Rex**: security veto on LLM prompt boundaries, output validation, live-action safety gates, provider-boundary isolation, and XSS regressions.
 - **Gus**: local demo verification, CLI ergonomics, CI, n8n dry-run bridge fit, and operator docs.
-- **Fred**: model/provider research for classifier quality only; no direct OAuth implementation yet.
+- **Fred**: safe automation/provider-action-limit research only; no direct OAuth implementation yet.
 
 ## Known Follow-Up Issues
 
 - Deterministic classifier still needs real-world tuning.
+- Optional LLM classifier exists only as a provider hook; no real provider wiring or credentials are implemented.
 - No production OAuth yet.
 - n8n workflow package needs real local import testing against Kent's actual n8n instance before activation.
 - n8n approved action bridge is dry-run only; live provider actions still need a separate explicit reviewed workflow.
-- LLM classifier not implemented yet.
 - YOLO mode is product direction only; must not be casually enabled.
 
 ## Product Voice
