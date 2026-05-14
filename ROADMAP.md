@@ -242,25 +242,52 @@ Acceptance criteria:
 - Classifier reasons remain explainable with `llm:` prefixes.
 - Provider failures and invalid model output fall back to deterministic rules.
 
-### Phase 11 — Guarded YOLO Mode
+### Phase 11 — Guarded YOLO Mode ✅
+
+Status: implemented on `phase-11-guarded-yolo-guardrails`.
 
 Goal: allow power users to automate replies/blocks while making footguns obvious.
 
-Deliverables:
+Delivered:
 
-- explicit YOLO settings
-- daily send limits
+- `botfucker.yolo_policy.YoloPolicy` and `evaluate_yolo_decision`
+- YOLO disabled by default
+- exact confirmation phrase requirement: `I ACCEPT BOTFUCKER YOLO RISK`
+- emergency stop override
+- provider-action allowlist
 - classification allowlist
-- confidence thresholds
-- tone restrictions
-- audit log
-- emergency off switch
+- confidence threshold
+- daily action limit
+- reply tone allowlist
+- legacy `--live --auto-approve` now requires YOLO guardrails before live provider actions
+- tests proving YOLO cannot silently enable live provider actions
 
 Acceptance criteria:
 
 - Disabled by default.
 - Requires explicit confirmation.
 - Never silently enables aggressive/legal-ish replies.
+- Blocks provider actions that fail allowlist/confidence/daily-limit/emergency-stop gates.
+
+### Phase 12 — Real n8n Import/Dry-Run Validation
+
+Goal: test the packaged n8n workflows against Kent's actual n8n instance without activating live provider mutations.
+
+Deliverables:
+
+- import `docs/n8n-workflow.json` into n8n-vps or local n8n test instance
+- import `docs/n8n-approved-action-bridge.json` inactive/dry-run
+- confirm workflow node compatibility with the installed n8n version
+- confirm environment variable/file-path assumptions
+- run sample-only dry-run payloads end-to-end
+- document any n8n import/export fixes
+
+Acceptance criteria:
+
+- Workflows import cleanly into real n8n.
+- Dry-run path executes on sample data only.
+- No Gmail/Microsoft/IMAP/SMTP mutation credentials are attached.
+- Activation remains manual and reviewed.
 
 ## Local Kodex/Codex Demo Plan
 
@@ -308,23 +335,23 @@ Use fake or sanitized JSON only. Real mailbox payloads stay out of the repo.
 
 ## Near-Term Recommendation
 
-Next PR should be **Phase 11: Guarded YOLO Mode design/guardrails**, not OAuth implementation.
+Next PR should be **Phase 12: Real n8n Import/Dry-Run Validation**, not OAuth implementation.
 
 Recommended scope:
 
-- explicit YOLO settings, disabled by default
-- daily send/action limits
-- classification allowlist and confidence thresholds
-- tone restrictions for any generated/sent reply
-- audit log and emergency off switch
-- tests proving YOLO cannot silently enable live provider actions
+- import both n8n JSON workflows into Kent's actual n8n test instance or a local matching n8n version
+- keep workflows inactive/manual and sample-data-only
+- validate node compatibility, environment variables, and file paths
+- run the dry-run path end-to-end with fake/sample payloads
+- document any import/export fixes
+- attach no Gmail/Microsoft/IMAP/SMTP mutation credentials
 
-OAuth can still wait. We now have the import path, approved-action export, dry-run bridge, and optional LLM classifier. Next is guardrails before any product even thinks about unsupervised provider mutation.
+OAuth can still wait. We now have import, review, export, bridge, optional LLM classification, and YOLO guardrails. Next: prove the n8n package actually imports and dry-runs in the real beast instead of admiring the JSON like it’s a museum artifact.
 
 ## Team Utilization
 
 - **Amy**: orchestrates scope, keeps phases honest, and blocks shiny-object OAuth detours.
-- **Chip**: owns guarded YOLO-mode settings/guardrail implementation if we proceed.
-- **Rex**: reviews live-action safety gates, prompt-injection hardening, output validation, and provider-boundary isolation.
-- **Gus**: verifies CLI ergonomics, local demo steps, CI, and n8n docs usability.
-- **Fred**: researches safe automation limits and provider action constraints; no direct OAuth implementation yet.
+- **Chip**: owns n8n workflow import/export fixes if real n8n exposes compatibility issues.
+- **Rex**: reviews live-action safety gates, credential absence, and provider-boundary isolation.
+- **Gus**: verifies n8n import, environment assumptions, local demo steps, CI, and operator docs.
+- **Fred**: researches n8n node compatibility/version quirks only; no direct OAuth implementation yet.
