@@ -172,29 +172,29 @@ Non-goals preserved:
 - no YOLO mode
 - no send/move/delete provider calls
 
-### Phase 8 — Approved Action Export ⏭️
+### Phase 8 — Approved Action Export ✅
 
-Status: next recommended build.
+Status: implemented on `phase-8-approved-action-export`.
 
 Goal: export human-approved local review/audit events as an idempotent JSON bundle that n8n or another provider bridge can consume later.
 
-Deliverables:
+Delivered:
 
 - local-only `export-approved-actions` CLI command
-- export only approved audit events from SQLite
-- `since-audit-id` or equivalent cursor for idempotent exports
+- export only approved warning audit events from SQLite
+- `--since-audit-id` cursor for idempotent exports
 - explicit action IDs / audit IDs for provider bridge deduplication
-- no provider credentials in exports
+- no provider credentials, message subject, or message snippet in exports
 - no provider-side execution in BotFucker core
-- documentation for importing the bundle into the future n8n action bridge
+- README documentation and tests for the export workflow
 
 Acceptance criteria:
 
-- Unapproved, dismissed, sample-only, or unsafe actions are not exported.
+- Unapproved, dismissed, whitelist, and blacklist actions are not exported.
 - Export output contains enough IDs for downstream idempotency.
 - Export output contains no secrets, OAuth tokens, passwords, raw private headers, or provider credentials.
 - The command does not call Gmail, Microsoft, IMAP, SMTP, n8n, or any live provider.
-- Tests prove approved-only export and provider-boundary behavior.
+- Tests prove approved-only export, cursor behavior, and provider-boundary behavior.
 
 ### Phase 9 — Optional LLM Classifier
 
@@ -280,22 +280,23 @@ Use fake or sanitized JSON only. Real mailbox payloads stay out of the repo.
 
 ## Near-Term Recommendation
 
-Next PR should be **Approved Action Export**, not OAuth implementation.
+Next PR should be the **n8n Approved Action Bridge**, not OAuth implementation.
 
 Recommended scope:
 
-- add a local-only `export-approved-actions` command
-- export only human-reviewed SQLite audit events
-- make the export idempotent/traceable using audit IDs
-- preserve the provider boundary: export intent, do not execute provider actions
-- add tests for no `--live`, no provider credentials, and no unapproved action export
+- create a separate n8n action workflow that consumes `approved-actions.json`
+- process only `botfucker.approved_actions.v1` bundles
+- dedupe using `audit_id`
+- start in dry-run/log-only mode
+- keep provider credentials in n8n
+- do not let the local UI execute provider actions directly
 
-OAuth can wait until we know the exact action contract. Building OAuth first is how products become login screens with delusions of grandeur.
+OAuth can wait until the export-to-bridge contract proves useful. Building OAuth first is how products become login screens with delusions of grandeur.
 
 ## Team Utilization
 
 - **Amy**: orchestrates scope, keeps phases honest, and blocks shiny-object OAuth detours.
-- **Chip**: implements Phase 8 with strict TDD.
-- **Rex**: reviews security boundaries, export contents, secret stripping, and browser/provider isolation.
-- **Gus**: verifies CLI ergonomics, local demo steps, CI, and future n8n bridge usability.
-- **Fred**: researches Gmail/Microsoft/n8n provider action shapes only after the approved-action export contract is stable.
+- **Chip**: owns bridge implementation once the export contract is reviewed.
+- **Rex**: reviews security boundaries, export contents, credential leakage, unapproved actions, browser-triggered side effects, and XSS regressions.
+- **Gus**: verifies CLI ergonomics, local demo steps, CI, and n8n bridge usability.
+- **Fred**: researches Gmail/Microsoft/n8n provider action shapes for the bridge only; no direct OAuth implementation yet.
