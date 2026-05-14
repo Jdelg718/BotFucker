@@ -196,7 +196,30 @@ Acceptance criteria:
 - The command does not call Gmail, Microsoft, IMAP, SMTP, n8n, or any live provider.
 - Tests prove approved-only export, cursor behavior, and provider-boundary behavior.
 
-### Phase 9 — Optional LLM Classifier
+### Phase 9 — n8n Approved Action Bridge Dry Run ✅
+
+Status: implemented on `phase-9-n8n-approved-action-bridge`.
+
+Goal: consume `botfucker.approved_actions.v1` export bundles in a separate n8n workflow, validate/dedupe approved actions, and log what would execute without touching live mail.
+
+Delivered:
+
+- importable inactive `docs/n8n-approved-action-bridge.json` dry-run workflow
+- operator guide `docs/n8n-approved-action-bridge.md`
+- schema validation for `botfucker.approved_actions.v1`
+- dedupe hook based on `audit_id`
+- dry-run `would_execute` logging with `provider_execution: not_performed`
+- docs/tests proving no Gmail/Microsoft/IMAP/email-send nodes in the starter
+
+Acceptance criteria:
+
+- Bridge starts inactive and dry-run/log-only.
+- Bridge validates schema and safety scope before emitting actions.
+- Bridge dedupes by `audit_id`.
+- Provider credentials stay in n8n.
+- No provider action nodes are connected in the starter workflow.
+
+### Phase 10 — Optional LLM Classifier
 
 Goal: improve classification quality without trusting email content blindly.
 
@@ -214,7 +237,7 @@ Acceptance criteria:
 - LLM output is validated before use.
 - Classifier reasons remain explainable.
 
-### Phase 10 — Guarded YOLO Mode
+### Phase 11 — Guarded YOLO Mode
 
 Goal: allow power users to automate replies/blocks while making footguns obvious.
 
@@ -280,23 +303,23 @@ Use fake or sanitized JSON only. Real mailbox payloads stay out of the repo.
 
 ## Near-Term Recommendation
 
-Next PR should be the **n8n Approved Action Bridge**, not OAuth implementation.
+Next PR should be **Phase 10: Optional LLM Classifier**, not OAuth implementation.
 
 Recommended scope:
 
-- create a separate n8n action workflow that consumes `approved-actions.json`
-- process only `botfucker.approved_actions.v1` bundles
-- dedupe using `audit_id`
-- start in dry-run/log-only mode
-- keep provider credentials in n8n
-- do not let the local UI execute provider actions directly
+- add an optional classifier provider abstraction
+- use strict structured JSON output
+- treat message content as untrusted prompt-injection bait
+- validate LLM output before it affects classification
+- keep deterministic classifier fallback
+- use mocked provider responses in tests
 
-OAuth can wait until the export-to-bridge contract proves useful. Building OAuth first is how products become login screens with delusions of grandeur.
+OAuth can still wait. The bridge contract exists; now improve classification quality without making the mailbox a science experiment.
 
 ## Team Utilization
 
 - **Amy**: orchestrates scope, keeps phases honest, and blocks shiny-object OAuth detours.
-- **Chip**: owns bridge implementation once the export contract is reviewed.
-- **Rex**: reviews security boundaries, export contents, credential leakage, unapproved actions, browser-triggered side effects, and XSS regressions.
-- **Gus**: verifies CLI ergonomics, local demo steps, CI, and n8n bridge usability.
-- **Fred**: researches Gmail/Microsoft/n8n provider action shapes for the bridge only; no direct OAuth implementation yet.
+- **Chip**: owns optional LLM classifier implementation if we proceed.
+- **Rex**: reviews prompt-injection hardening, output validation, and provider-boundary isolation.
+- **Gus**: verifies CLI ergonomics, local demo steps, CI, and n8n docs usability.
+- **Fred**: researches model/provider fit for classifier quality only; no direct OAuth implementation yet.

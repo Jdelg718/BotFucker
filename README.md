@@ -35,9 +35,9 @@ See [DESIGN.md](DESIGN.md) for the proposed architecture and roadmap.
 - Persists a durable local review queue and audit log.
 - Runs a local browser cockpit for reviewing, approving, dismissing, whitelisting, or blacklisting items in local SQLite state.
 - Imports bounded n8n/webhook JSON after the provider layer has already fetched mail.
-- Exports approved local audit events as an idempotent JSON bundle for a future provider bridge.
+- Exports approved local audit events as an idempotent JSON bundle for an n8n/provider bridge.
+- Provides an inactive n8n approved-action bridge starter that validates/dedupes actions in dry-run mode.
 - Keeps provider credentials and live mailbox side effects outside the local UI and review queue.
-- Leaves send/move/delete/archive provider actions for a future explicit action bridge.
 
 ## Safety First
 
@@ -55,7 +55,7 @@ Local UI and review CLI actions do not:
 - update a real provider whitelist or blacklist
 - expose secrets in the browser
 
-The legacy IMAP scanner still exists behind `outreach_filter.py`, but live automation requires both `--live` and `--auto-approve`. The preferred current path is n8n/provider fetch → normalized JSON → local SQLite review → human decision → approved-action export → future n8n action bridge.
+The legacy IMAP scanner still exists behind `outreach_filter.py`, but live automation requires both `--live` and `--auto-approve`. The preferred current path is n8n/provider fetch → normalized JSON → local SQLite review → human decision → approved-action export → n8n approved-action bridge dry run.
 
 ## Requirements
 
@@ -357,6 +357,38 @@ Export constraints:
 - omits message subject/snippet and provider credential material
 - does not call Gmail, Microsoft, IMAP, SMTP, n8n, or any live provider from BotFucker core
 - keeps browser UI actions local-only
+
+## Phase 9 n8n Approved Action Bridge Dry Run
+
+Phase 9 adds an importable n8n dry-run bridge that consumes `approved-actions.json`, validates the `botfucker.approved_actions.v1` schema, dedupes by `audit_id`, and logs `would_execute` records without provider side effects.
+
+Files:
+
+- [`docs/n8n-approved-action-bridge.json`](docs/n8n-approved-action-bridge.json) — inactive n8n dry-run workflow starter.
+- [`docs/n8n-approved-action-bridge.md`](docs/n8n-approved-action-bridge.md) — setup, input contract, dedupe notes, and live-bridge safety rules.
+
+Starter loop:
+
+```bash
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 approve sample-001 --actor you
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 export-approved-actions > approved-actions.json
+```
+
+Then import `docs/n8n-approved-action-bridge.json` into n8n and point it at `approved-actions.json`:
+
+```bash
+export BOTFUCKER_APPROVED_ACTIONS="/path/to/approved-actions.json"
+export BOTFUCKER_PROCESSED_AUDIT_IDS="audit-0001,audit-0002"
+```
+
+Bridge constraints:
+
+- starts inactive and dry-run/log-only
+- validates `botfucker.approved_actions.v1`
+- dedupes by `audit_id`
+- emits `provider_execution: not_performed`
+- contains no Gmail, Microsoft, IMAP, SMTP, send-mail, move-mail, delete-mail, archive, or label mutation nodes in the starter
+- keeps provider credentials in n8n and out of BotFucker core
 
 ## Test Before Going Live
 

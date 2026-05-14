@@ -84,25 +84,28 @@ Browser/server boundary:
 - Browser UI posts local review intent only.
 - Server/provider bridge validates whether intent is allowed before any real provider call.
 
-## Approved action export
+## Approved Action Export
 
-Before any provider side effects can exist, BotFucker needs an approved action export from a human-reviewed SQLite audit event.
+BotFucker now includes an approved action export from human-reviewed SQLite audit events.
 
-The export should be a separate command, not an implicit UI side effect. Proposed future command shape:
+Command shape:
 
 ```bash
 python3 -m botfucker.review_cli \
   --db botfucker_review.sqlite3 \
-  export-approved-actions --since-audit-id 123 > approved-actions.json
+  export-approved-actions --since-audit-id audit-0001 > approved-actions.json
 ```
 
-Proposed export fields:
+Current export fields:
 
 ```json
 {
+  "schema": "botfucker.approved_actions.v1",
+  "safety_scope": "provider_action_export_only",
+  "provider_execution": "not_performed",
   "actions": [
     {
-      "audit_id": 124,
+      "audit_id": "audit-0002",
       "item_id": "webhook:gmail:gmail-msg-123",
       "message_id": "gmail-msg-123",
       "thread_id": "gmail-thread-7",
@@ -111,7 +114,8 @@ Proposed export fields:
       "approved_by": "human",
       "approved_at": "2026-05-13T09:45:00Z",
       "draft_reply": "Human-reviewed warning text",
-      "safety_scope": "provider_action_export_only"
+      "safety_scope": "provider_action_export_only",
+      "provider_execution": "not_performed"
     }
   ]
 }
@@ -129,9 +133,9 @@ But those are export intents only until a separate bridge consumes them.
 
 ## n8n action bridge
 
-A future n8n action bridge can consume `approved-actions.json` and perform provider-side effects.
+BotFucker now includes a dry-run n8n action bridge starter in `docs/n8n-approved-action-bridge.json`. It consumes `approved-actions.json`, validates `botfucker.approved_actions.v1`, dedupes by `audit_id`, and logs `would_execute` records only.
 
-Rules for the bridge:
+Rules for any future live bridge:
 
 - It must be a separate workflow from the import workflow.
 - It must require explicit enablement.
@@ -155,9 +159,9 @@ Do not add live provider whitelist/blacklist mutations.
 
 ## Next engineering step
 
-The next engineering step should be **Approved Action Export**, not OAuth.
+The next engineering step should be **Optional LLM Classifier**, not OAuth.
 
-Build a local-only export command that emits human-approved audit intents from SQLite, with no provider credentials and no provider side effects. That gives the future n8n action bridge a clean contract before anybody touches Gmail OAuth, Microsoft OAuth, or IMAP mutation code.
+Approved action export and the dry-run bridge contract now exist. Next, improve classification quality behind a strict provider abstraction, structured output validation, prompt-injection hardening, mocked provider tests, and a deterministic fallback.
 
 ## Acceptance criteria for Phase 7
 
