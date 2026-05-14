@@ -50,6 +50,16 @@ def build_parser() -> argparse.ArgumentParser:
     audit_parser.add_argument("--item-id", default=None, help="Filter audit events by review item id.")
     audit_parser.add_argument("--json", action="store_true", help="Emit JSON lines.")
 
+    export_parser = subparsers.add_parser(
+        "export-approved-actions",
+        help="Export human-approved local audit intents as provider-action JSON without executing them.",
+    )
+    export_parser.add_argument(
+        "--since-audit-id",
+        default=None,
+        help="Export approved actions after this audit id, e.g. audit-0001.",
+    )
+
     import_parser = subparsers.add_parser("import-json", help="Import review items from a JSON file or '-' for stdin.")
     import_parser.add_argument("path", help="JSON list of review items, {'items': [...]}, or '-' for stdin.")
 
@@ -115,6 +125,11 @@ def main(argv: list[str] | None = None) -> int:
                     print("Safety: audit events describe local review decisions only, not provider-side effects.")
                 return 0
 
+            if args.command == "export-approved-actions":
+                bundle = _build_approved_action_export(store, since_audit_id=args.since_audit_id)
+                print(json.dumps(bundle, sort_keys=True))
+                return 0
+
             if args.command == "import-json":
                 payload = _load_json(args.path)
                 items = payload.get("items", []) if isinstance(payload, dict) else payload
@@ -150,6 +165,69 @@ def _load_json(path: str) -> Any:
         return json.loads(sys.stdin.read())
     with Path(path).open("r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def _build_approved_action_export(store: DurableReviewStore, since_audit_id: str | None = None) -> dict[str, Any]:
+    since_number = _audit_number(since_audit_id) if since_audit_id else None
+    actions: list[dict[str, Any]] = []
+    last_audit_id = since_audit_id
+
+    for event in store.list_audit_events():
+        if event.action != "approve_warning":
+            continue
+        event_number = _audit_number(event.event_id)
+        if since_number is not None and event_number <= since_number:
+            continue
+
+        item = store.get_item(event.item_id)
+        actions.append(
+            {
+                "audit_id": event.event_id,
+                "item_id": item.item_id,
+                "message_id": item.message_id,
+                "thread_id": item.thread_id,
+                "provider": _provider_from_item(item.item_id, item.source),
+                "approved_action": event.action,
+                "approved_by": event.actor,
+                "approved_at": event.created_at,
+                "draft_reply": item.draft_reply,
+                "safety_scope": "provider_action_export_only",
+                "provider_execution": "not_performed",
+            }
+        )
+        last_audit_id = event.event_id
+
+    return {
+        "schema": "botfucker.approved_actions.v1",
+        "safety_scope": "provider_action_export_only",
+        "provider_execution": "not_performed",
+        "cursor": {
+            "since_audit_id": since_audit_id,
+            "last_audit_id": last_audit_id,
+        },
+        "actions": actions,
+    }
+
+
+def _audit_number(audit_id: str | None) -> int:
+    if not audit_id:
+        return 0
+    prefix = "audit-"
+    if not audit_id.startswith(prefix):
+        raise ReviewStoreError(f"Invalid audit id cursor: {audit_id}")
+    try:
+        return int(audit_id[len(prefix):])
+    except ValueError as exc:
+        raise ReviewStoreError(f"Invalid audit id cursor: {audit_id}") from exc
+
+
+def _provider_from_item(item_id: str, source: str) -> str:
+    for value in (source, item_id):
+        if value.startswith("webhook:"):
+            parts = value.split(":", 2)
+            if len(parts) >= 2 and parts[1]:
+                return parts[1]
+    return "local"
 
 
 if __name__ == "__main__":

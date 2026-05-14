@@ -5,9 +5,9 @@
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
 - Latest merged milestone: FF2K branded UI plus HyperFrames animated explainer
-- Current working branch: `main`
-- Current PR target: none; next recommended branch is `phase-8-approved-action-export`
-- Current local demo target: pull repo into Kodex/Codex and demonstrate the local review cockpit on `127.0.0.1:8765`
+- Current working branch: `phase-8-approved-action-export`
+- Current PR target: Phase 8 approved action export
+- Current local demo target: demonstrate local review cockpit on `127.0.0.1:8765`, approve sample items, then export `approved-actions.json`
 - Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
 
 ## What BotFucker Is
@@ -26,7 +26,7 @@ Important files:
 
 ```text
 DESIGN.md                     # v2 architecture and principles
-ROADMAP.md                    # phased product roadmap, current through Phase 8 recommendation
+ROADMAP.md                    # phased product roadmap, current through Phase 8 implementation
 docs/webhook-contract.md      # normalized n8n/webhook JSON contract
 docs/n8n-workflow.json        # importable n8n starter workflow
 docs/n8n-workflow.md          # n8n operator guide and safety checklist
@@ -215,27 +215,49 @@ Delivered importable inactive `docs/n8n-workflow.json`, operator guide, local CL
 
 Delivered `docs/provider-auth-plan.md`, documenting n8n-first vs Direct OAuth tradeoffs, IMAP/SMTP constraints, secret storage, browser/server boundaries, approved action export shape, and future n8n action bridge rules.
 
-## Next PR Recommendation
+## Phase 8 Implementation Status
 
-Build **Phase 8: Approved Action Export**, not OAuth.
+Phase 8 is implemented on branch `phase-8-approved-action-export`.
 
-Suggested branch:
+Delivered:
+
+1. Added local-only `export-approved-actions` command.
+2. Exports only `approve_warning` SQLite audit events.
+3. Includes audit IDs/action IDs so n8n can dedupe downstream.
+4. Supports `--since-audit-id` cursoring.
+5. Omits message subject/snippet and credential-like provider material.
+6. Does not call Gmail, Microsoft, IMAP, SMTP, or n8n from BotFucker core.
+7. Added TDD coverage for approved-only export, cursor behavior, and secret/provider-boundary safety.
+
+Example:
 
 ```bash
-git checkout main
-git pull origin main
-git checkout -b phase-8-approved-action-export
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 approve sample-001 --actor you
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 export-approved-actions > approved-actions.json
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 export-approved-actions --since-audit-id audit-0001
 ```
+
+Verification:
+
+```bash
+python3 -m py_compile outreach_filter.py botfucker/*.py
+python3 -m unittest discover -s tests -v
+```
+
+Current result: **63 tests passing**.
+
+## Next PR Recommendation
+
+Build the separate **n8n Approved Action Bridge**, not OAuth.
 
 Suggested scope:
 
-1. Add a local-only `export-approved-actions` command.
-2. Export only human-approved SQLite audit events.
-3. Include audit IDs / action IDs so n8n can dedupe downstream.
-4. Provide `--since-audit-id` or equivalent cursor support.
-5. Strip/omit secrets, private headers, OAuth tokens, passwords, and provider credentials.
-6. Do not call Gmail, Microsoft, IMAP, SMTP, or n8n from BotFucker core.
-7. Add tests before implementation.
+1. Separate n8n workflow consumes `approved-actions.json`.
+2. Validate schema `botfucker.approved_actions.v1`.
+3. Dedupe by `audit_id`.
+4. Start in dry-run/log-only mode.
+5. Keep provider credentials in n8n.
+6. Do not let the local UI perform provider actions directly.
 
 ## Suggested Prompt for Kodex/Codex
 
@@ -244,37 +266,34 @@ You are working on BotFucker, an AI-era inbox defense app.
 
 Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, docs/webhook-contract.md, docs/n8n-workflow.md, and docs/provider-auth-plan.md.
 
-First, verify the current local demo path without changing behavior:
+First, verify the current Phase 8 branch without changing behavior:
 - run python3 -m py_compile outreach_filter.py botfucker/*.py
 - run python3 -m unittest discover -s tests -v
 - seed sample data with python3 -m botfucker.review_cli --db botfucker_review.sqlite3 seed-samples
-- launch python3 -m botfucker.local_ui --host 127.0.0.1 --port 8765 --db botfucker_review.sqlite3
+- approve one sample with python3 -m botfucker.review_cli --db botfucker_review.sqlite3 approve sample-001 --actor you
+- export approved actions with python3 -m botfucker.review_cli --db botfucker_review.sqlite3 export-approved-actions
 
-Then implement Phase 8 only: Approved Action Export.
+Then review Phase 8 only: Approved Action Export.
 
-Use strict TDD:
-1. Write failing tests first for approved-only export, cursor/idempotency behavior, and secret/provider-boundary safety.
-2. Run the focused tests and confirm they fail for the expected reason.
-3. Implement the minimal CLI/store behavior to pass.
-4. Run py_compile and the full unittest suite.
+Check that exports contain approved intent only, support --since-audit-id, include audit/action IDs for dedupe, omit subject/snippet/credential material, and do not call providers.
 
 Do not add real OAuth. Do not add provider credentials. Do not send, move, delete, archive, or mutate email. Do not enable YOLO mode. Preserve the provider boundary: BotFucker exports approved intent only; provider execution belongs to a later explicit bridge.
 ```
 
 ## Team Plan
 
-- **Amy**: orchestration and scope control. She keeps the product from wandering into OAuth swamp country before the action contract exists.
-- **Chip**: Phase 8 implementation using strict TDD.
+- **Amy**: orchestration and scope control. She keeps the product from wandering into OAuth swamp country before the action contract is reviewed.
+- **Chip**: owns follow-up bridge implementation if Phase 8 review passes.
 - **Rex**: security veto on export content, credential leakage, unapproved actions, browser-triggered side effects, and XSS regressions.
 - **Gus**: local demo verification, CLI ergonomics, CI, n8n bridge fit, and operator docs.
-- **Fred**: provider/API research only after export shape stabilizes; no implementation until the boundary is proven.
+- **Fred**: provider/API research for the bridge only; no direct OAuth implementation yet.
 
 ## Known Follow-Up Issues
 
 - Deterministic classifier still needs real-world tuning.
 - No production OAuth yet.
 - n8n workflow package needs real local import testing against Kent's actual n8n instance before activation.
-- Approved action export is not implemented yet.
+- n8n approved action bridge is not implemented yet.
 - LLM classifier not implemented yet.
 - YOLO mode is product direction only; must not be casually enabled.
 

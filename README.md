@@ -35,6 +35,7 @@ See [DESIGN.md](DESIGN.md) for the proposed architecture and roadmap.
 - Persists a durable local review queue and audit log.
 - Runs a local browser cockpit for reviewing, approving, dismissing, whitelisting, or blacklisting items in local SQLite state.
 - Imports bounded n8n/webhook JSON after the provider layer has already fetched mail.
+- Exports approved local audit events as an idempotent JSON bundle for a future provider bridge.
 - Keeps provider credentials and live mailbox side effects outside the local UI and review queue.
 - Leaves send/move/delete/archive provider actions for a future explicit action bridge.
 
@@ -54,7 +55,7 @@ Local UI and review CLI actions do not:
 - update a real provider whitelist or blacklist
 - expose secrets in the browser
 
-The legacy IMAP scanner still exists behind `outreach_filter.py`, but live automation requires both `--live` and `--auto-approve`. The preferred current path is n8n/provider fetch → normalized JSON → local SQLite review → human decision → future approved-action export.
+The legacy IMAP scanner still exists behind `outreach_filter.py`, but live automation requires both `--live` and `--auto-approve`. The preferred current path is n8n/provider fetch → normalized JSON → local SQLite review → human decision → approved-action export → future n8n action bridge.
 
 ## Requirements
 
@@ -336,20 +337,26 @@ Phase 7 does **not** implement Gmail OAuth, Microsoft OAuth, IMAP password handl
 - approved action export shape
 - future n8n action bridge rules
 
-## Next: Phase 8 Approved Action Export
+## Phase 8 Approved Action Export
 
-The next recommended build is **Approved Action Export**, not OAuth.
+Phase 8 adds a local-only approved action export. This is **not** OAuth, not provider auth, and not mailbox automation. It turns human-approved SQLite audit events into an idempotent JSON bundle that n8n or a future provider bridge can consume later.
 
-The goal is to export human-approved SQLite audit/review decisions as an idempotent JSON bundle that n8n or a future provider bridge can consume later.
+Example:
 
-Planned constraints:
+```bash
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 approve sample-001 --actor you
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 export-approved-actions > approved-actions.json
+python3 -m botfucker.review_cli --db botfucker_review.sqlite3 export-approved-actions --since-audit-id audit-0001
+```
 
-- export approved intent only
-- include audit IDs/action IDs for downstream deduplication
-- support a cursor such as `--since-audit-id`
-- omit secrets, OAuth tokens, passwords, raw private headers, and provider credentials
-- do not call Gmail, Microsoft, IMAP, SMTP, n8n, or any live provider from BotFucker core
-- keep browser UI actions local-only
+Export constraints:
+
+- exports approved intent only (`approve_warning` audit events)
+- includes audit IDs/action IDs for downstream deduplication
+- supports `--since-audit-id` cursoring
+- omits message subject/snippet and provider credential material
+- does not call Gmail, Microsoft, IMAP, SMTP, n8n, or any live provider from BotFucker core
+- keeps browser UI actions local-only
 
 ## Test Before Going Live
 

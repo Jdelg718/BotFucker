@@ -192,6 +192,92 @@ class ReviewCliTests(unittest.TestCase):
             with DurableReviewStore(db_path) as store:
                 self.assertEqual(store.list_items(status="all"), [])
 
+    def test_export_approved_actions_exports_only_human_approved_events(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "review.sqlite3"
+            self.run_cli("--db", str(db_path), "seed-samples")
+            self.run_cli("--db", str(db_path), "approve", "sample-001", "--actor", "kent", "--note", "send the warning")
+            self.run_cli("--db", str(db_path), "dismiss", "sample-002", "--actor", "kent")
+            self.run_cli("--db", str(db_path), "blacklist-sender", "sample-003", "--actor", "kent")
+
+            code, output = self.run_cli("--db", str(db_path), "export-approved-actions")
+
+            self.assertEqual(code, 0)
+            bundle = json.loads(output)
+            self.assertEqual(bundle["schema"], "botfucker.approved_actions.v1")
+            self.assertEqual(bundle["safety_scope"], "provider_action_export_only")
+            self.assertEqual(len(bundle["actions"]), 1)
+            action = bundle["actions"][0]
+            self.assertEqual(action["audit_id"], "audit-0001")
+            self.assertEqual(action["item_id"], "sample-001")
+            self.assertEqual(action["message_id"], "<sample-001@example.com>")
+            self.assertEqual(action["thread_id"], "thread-sample-001")
+            self.assertEqual(action["approved_action"], "approve_warning")
+            self.assertEqual(action["approved_by"], "kent")
+            self.assertEqual(action["draft_reply"], "Mock warning draft: Please stop sending unsolicited sales outreach.")
+            self.assertEqual(action["safety_scope"], "provider_action_export_only")
+            self.assertEqual(action["provider_execution"], "not_performed")
+
+    def test_export_approved_actions_supports_since_audit_id_cursor(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "review.sqlite3"
+            self.run_cli("--db", str(db_path), "seed-samples")
+            self.run_cli("--db", str(db_path), "approve", "sample-001")
+            self.run_cli("--db", str(db_path), "approve", "sample-002")
+
+            code, output = self.run_cli("--db", str(db_path), "export-approved-actions", "--since-audit-id", "audit-0001")
+
+            self.assertEqual(code, 0)
+            bundle = json.loads(output)
+            self.assertEqual([action["audit_id"] for action in bundle["actions"]], ["audit-0002"])
+            self.assertEqual(bundle["cursor"]["since_audit_id"], "audit-0001")
+            self.assertEqual(bundle["cursor"]["last_audit_id"], "audit-0002")
+
+    def test_export_approved_actions_omits_secret_like_content_and_provider_credentials(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "review.sqlite3"
+            import_path = Path(tmpdir) / "items.json"
+            import_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "item_id": "secret-001",
+                            "message_id": "gmail-secret-msg",
+                            "thread_id": "gmail-secret-thread",
+                            "from_email": "sales@example.com",
+                            "from_name": "Sales Bot",
+                            "sender_domain": "example.com",
+                            "subject": "Bearer token and OAuth refresh_token inside",
+                            "snippet": "Authorization: Bearer abc123 password=hunter2 refresh_token=secret",
+                            "received_at": "2026-05-13T10:00:00+00:00",
+                            "classification": "cold_outreach",
+                            "confidence": 0.95,
+                            "recommended_action": "warn_1",
+                            "draft_reply": "Please stop contacting us.",
+                            "provider": "gmail",
+                            "oauth_token": "abc123",
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            self.run_cli("--db", str(db_path), "import-json", str(import_path))
+            self.run_cli("--db", str(db_path), "approve", "secret-001", "--actor", "kent")
+
+            code, output = self.run_cli("--db", str(db_path), "export-approved-actions")
+
+            self.assertEqual(code, 0)
+            exported_text = output.lower()
+            self.assertNotIn("bearer", exported_text)
+            self.assertNotIn("password", exported_text)
+            self.assertNotIn("refresh_token", exported_text)
+            self.assertNotIn("oauth", exported_text)
+            self.assertNotIn("hunter2", exported_text)
+            action = json.loads(output)["actions"][0]
+            self.assertEqual(action["draft_reply"], "Please stop contacting us.")
+            self.assertEqual(action["message_id"], "gmail-secret-msg")
+            self.assertEqual(action["thread_id"], "gmail-secret-thread")
+
 
 if __name__ == "__main__":
     unittest.main()
