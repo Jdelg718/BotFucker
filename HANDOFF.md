@@ -4,10 +4,10 @@
 
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
-- Latest merged milestone: Phase 10 optional LLM classifier (`feat: add optional llm classifier hook`, PR #11)
-- Current working branch: `phase-11-guarded-yolo-guardrails`
-- Current PR target: Phase 11 guarded YOLO guardrails
-- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, and fail-closed YOLO policy checks
+- Latest merged milestone: Phase 11 guarded YOLO policy (`feat: add guarded yolo policy`, PR #12)
+- Current working branch: `phase-12-n8n-import-dry-run-validation`
+- Current PR target: Phase 12 real n8n import/dry-run validation
+- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, and real n8n import validation results
 - Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
 
 ## What BotFucker Is
@@ -26,7 +26,8 @@ Important files:
 
 ```text
 DESIGN.md                     # v2 architecture and principles
-ROADMAP.md                    # phased product roadmap, current through Phase 11 guarded YOLO guardrails
+ROADMAP.md                    # phased product roadmap, current through Phase 12 n8n import validation
+docs/n8n-import-validation.md # Phase 12 real n8n import/dry-run procedure and results
 docs/webhook-contract.md      # normalized n8n/webhook JSON contract
 docs/n8n-workflow.json        # importable n8n import starter workflow
 docs/n8n-workflow.md          # n8n import operator guide and safety checklist
@@ -115,10 +116,10 @@ git log --oneline -5
 Expected current top commit:
 
 ```text
-e0443b7 feat: add optional llm classifier hook (#11)
+713bc7f feat: add guarded yolo policy (#12)
 ```
 
-If this handoff update has been merged after that, the top commit will be newer. The important part is that PR #11 content is present.
+If this handoff update has been merged after that, the top commit will be newer. The important part is that PR #12 content is present.
 
 ### Verify locally
 
@@ -167,6 +168,7 @@ Say explicitly:
 - current bridge work is dry-run/log-only, not live provider mutation
 - optional LLM classifier is provider-hooked and validated, with deterministic fallback
 - legacy live automation now requires explicit YOLO guardrails before provider actions
+- real n8n import validation passed sample-only dry-run on n8n-vps; validation rows were cleaned up
 
 ## Animated Explainer Demo
 
@@ -234,66 +236,73 @@ Delivered optional `llm_provider` hook to `classify_message`, untrusted/bounded 
 
 ### Phase 11 — Guarded YOLO Mode
 
-Implemented on branch `phase-11-guarded-yolo-guardrails`.
+Delivered `YoloPolicy`, fail-closed YOLO decision evaluator, default-off exact confirmation phrase, emergency stop, action/classification allowlists, confidence/daily-limit/tone gates, legacy live-auto-approve guardrail requirement, and tests proving live action attempts fail closed.
+
+### Phase 12 — Real n8n Import/Dry-Run Validation
+
+Implemented on branch `phase-12-n8n-import-dry-run-validation`.
 
 Delivered:
 
-1. Added `botfucker.yolo_policy.YoloPolicy` and `evaluate_yolo_decision`.
-2. YOLO is disabled by default.
-3. Requires exact confirmation phrase: `I ACCEPT BOTFUCKER YOLO RISK`.
-4. Supports emergency stop override.
-5. Gates provider actions by action allowlist, classification allowlist, confidence threshold, daily action limit, and reply tone allowlist.
-6. Legacy `--live --auto-approve` path now requires a YOLO policy before live provider actions.
-7. Live warning path checks `send_warning`, `write_blacklist`, and `move_to_sales`; blacklist match delete checks `delete_message`.
-8. Added tests proving default denial, confirmation failure, valid pass, gate failures, emergency stop, and live-auto-approve guardrail requirement.
+1. Added `scripts/validate_n8n_workflow_exports.py` static workflow export preflight.
+2. Added `samples/approved-actions.sample.json` safe fake approved-action bundle.
+3. Added `docs/n8n-import-validation.md` with exact procedure and actual n8n-vps results.
+4. Added explicit workflow IDs required by n8n 2.18.5 CLI import.
+5. Updated n8n file paths to `/home/node/.n8n-files` because Read/Write Files rejects arbitrary paths on the target.
+6. Updated approved-action bridge to parse `readWriteFile` binary JSON with `getBinaryDataBuffer` before schema validation.
+7. Imported both workflows into n8n-vps as inactive/manual workflows.
+8. Executed approved-action bridge sample-only dry-run; final node emitted `would_execute: approve_warning`, `provider_execution: not_performed`, and `bridge_status: dry_run_logged_only`.
+9. Cleaned validation workflow rows, sample execution rows, related n8n workflow metadata rows, and temp files.
 
 Verification:
 
 ```bash
-python3 -m py_compile outreach_filter.py botfucker/*.py
+python3 scripts/validate_n8n_workflow_exports.py
+python3 -m py_compile outreach_filter.py botfucker/*.py scripts/validate_n8n_workflow_exports.py
 python3 -m unittest discover -s tests -v
 ```
 
 ## Next PR Recommendation
 
-Build **Phase 12: Real n8n Import/Dry-Run Validation**, not OAuth.
+Build **Phase 13: Reviewed Action Bridge Promotion Plan**, not OAuth.
 
 Suggested scope:
 
-1. Import `docs/n8n-workflow.json` into Kent's n8n test target or local matching n8n.
-2. Import `docs/n8n-approved-action-bridge.json` inactive/dry-run.
-3. Confirm node compatibility, file paths, and environment variable assumptions.
-4. Run sample-only dry-run payloads end-to-end.
-5. Document import/export fixes.
-6. Attach no Gmail/Microsoft/IMAP/SMTP mutation credentials.
+1. Define how one provider action type graduates from dry-run to live review.
+2. Keep credentials in n8n only.
+3. Design persistent processed-`audit_id` state.
+4. Document rollback and emergency stop.
+5. Require provider-specific sandbox/manual tests.
+6. Require Rex/Gus security/ops review before any live mutation node is connected.
 
 ## Suggested Prompt for Kodex/Codex
 
 ```text
 You are working on BotFucker, an AI-era inbox defense app.
 
-Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, docs/webhook-contract.md, docs/n8n-workflow.md, docs/n8n-approved-action-bridge.md, and docs/provider-auth-plan.md.
+Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, docs/webhook-contract.md, docs/n8n-workflow.md, docs/n8n-approved-action-bridge.md, docs/n8n-import-validation.md, and docs/provider-auth-plan.md.
 
-First, verify the current Phase 11 branch without changing behavior:
-- run python3 -m py_compile outreach_filter.py botfucker/*.py
+First, verify the current Phase 12 branch without changing behavior:
+- run python3 scripts/validate_n8n_workflow_exports.py
+- run python3 -m py_compile outreach_filter.py botfucker/*.py scripts/validate_n8n_workflow_exports.py
 - run python3 -m unittest discover -s tests -v
-- inspect botfucker/yolo_policy.py and tests/test_yolo_guardrails.py
-- confirm live provider actions require explicit YOLO guardrails
+- inspect docs/n8n-import-validation.md and samples/approved-actions.sample.json
+- confirm n8n workflows include explicit ids, are inactive, and use /home/node/.n8n-files for Read/Write Files paths
 
-Then review Phase 11 only: Guarded YOLO Mode.
+Then review Phase 12 only: Real n8n Import/Dry-Run Validation.
 
-Check that YOLO is disabled by default, requires the exact confirmation phrase, supports emergency stop, gates provider actions by allowlist/classification/confidence/daily limit/tone, and that legacy --live --auto-approve cannot silently mutate mail without a YOLO policy.
+Check that both workflows imported into n8n-vps as inactive/manual, approved-action bridge executed sample-only dry-run, final output was provider_execution:not_performed, and cleanup removed validation rows/temp files.
 
 Do not add real OAuth. Do not add provider credentials. Do not attach Gmail/Microsoft/IMAP/SMTP mutation credentials. Do not enable live n8n provider actions. Preserve the provider boundary: live provider execution remains separately reviewed and guarded.
 ```
 
 ## Team Plan
 
-- **Amy**: orchestration and scope control. She keeps the product from wandering into OAuth swamp country before n8n dry-run validation is real.
-- **Chip**: owns n8n import/export compatibility fixes if Phase 11 review passes.
-- **Rex**: security veto on YOLO guardrails, live-action safety gates, credential absence, provider-boundary isolation, and XSS regressions.
-- **Gus**: local demo verification, n8n import/dry-run validation, CLI ergonomics, CI, and operator docs.
-- **Fred**: n8n version/node compatibility research only; no direct OAuth implementation yet.
+- **Amy**: orchestration and scope control. She keeps the product from wandering into OAuth swamp country before bridge promotion is reviewed.
+- **Chip**: owns reviewed action bridge promotion docs/tests if Phase 12 review passes.
+- **Rex**: security veto on processed-audit dedupe, credential absence, live-action safety gates, provider-boundary isolation, and XSS regressions.
+- **Gus**: n8n operator verification, dry-run bridge observability, cleanup steps, CI, and operator docs.
+- **Fred**: provider sandbox/action-limit research only; no direct OAuth implementation yet.
 
 ## Known Follow-Up Issues
 

@@ -159,9 +159,9 @@ Do not add live provider whitelist/blacklist mutations.
 
 ## Next engineering step
 
-The next engineering step should be **Real n8n Import/Dry-Run Validation**, not OAuth.
+The next engineering step should be **Reviewed Action Bridge Promotion Plan**, not OAuth.
 
-Approved action export, the dry-run bridge contract, the optional LLM classifier hook, and YOLO guardrails now exist. Next, prove the packaged n8n workflows import and execute dry-run/sample-only paths against a real n8n target without attaching provider mutation credentials.
+Approved action export, the dry-run bridge contract, the optional LLM classifier hook, YOLO guardrails, and real n8n import/dry-run validation now exist. Next, define how one reviewed provider action type can graduate from dry-run to live bridge while keeping credentials in n8n only, persisting processed `audit_id` dedupe state, and requiring rollback/security/operator review before any live mutation node is connected.
 
 ## Acceptance criteria for Phase 7
 

@@ -15,6 +15,7 @@ class N8nWorkflowDocsTests(unittest.TestCase):
         workflow = json.loads(WORKFLOW_PATH.read_text(encoding="utf-8"))
         serialized = json.dumps(workflow, sort_keys=True).lower()
 
+        self.assertEqual(workflow["id"], "botfucker-local-review-import-v1")
         self.assertEqual(workflow["name"], "BotFucker Local Review Import")
         self.assertIn("nodes", workflow)
         self.assertIn("connections", workflow)
@@ -82,6 +83,7 @@ class N8nWorkflowDocsTests(unittest.TestCase):
         workflow = json.loads(ACTION_BRIDGE_WORKFLOW_PATH.read_text(encoding="utf-8"))
         serialized = json.dumps(workflow, sort_keys=True).lower()
 
+        self.assertEqual(workflow["id"], "botfucker-approved-action-bridge-dry-run-v1")
         self.assertEqual(workflow["name"], "BotFucker Approved Action Bridge Dry Run")
         self.assertFalse(workflow["active"])
         self.assertIn("nodes", workflow)
@@ -117,6 +119,8 @@ class N8nWorkflowDocsTests(unittest.TestCase):
         validation_code = nodes["Validate And Dedupe Approved Actions"]["parameters"]["jsCode"]
         dry_run_code = nodes["Dry Run Provider Action Log"]["parameters"]["jsCode"]
 
+        self.assertIn("getBinaryDataBuffer", validation_code)
+        self.assertIn("JSON.parse", validation_code)
         self.assertIn("botfucker.approved_actions.v1", validation_code)
         self.assertIn("audit_id", validation_code)
         self.assertIn("processedAuditIds", validation_code)

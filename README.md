@@ -454,6 +454,29 @@ export BF_YOLO_EMERGENCY_STOP=false
 
 If any gate fails, BotFucker raises before the live provider action. Subtle? No. That is the point.
 
+## Phase 12 n8n Import Validation
+
+Phase 12 proved the n8n exports import and dry-run on Kent's real n8n target (`n8n-vps`, n8n 2.18.5) without attaching provider mutation credentials.
+
+Artifacts:
+
+- `scripts/validate_n8n_workflow_exports.py` — static preflight for workflow exports
+- `samples/approved-actions.sample.json` — fake approved-action bundle
+- `docs/n8n-import-validation.md` — exact import/dry-run/cleanup procedure and result
+
+Actual result:
+
+- both workflows imported inactive/manual
+- approved-action bridge executed sample-only dry-run
+- output stayed `provider_execution: not_performed`
+- cleanup removed validation workflows and sample execution rows
+
+Compatibility fixes shipped:
+
+- workflow exports include explicit `id` fields for n8n CLI import
+- file paths use `/home/node/.n8n-files`, because n8n 2.18.5 blocks arbitrary local file paths
+- approved-action bridge parses `readWriteFile` binary JSON via `getBinaryDataBuffer`
+
 ## Test Before Going Live
 
 Compile-check the script and package:
