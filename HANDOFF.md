@@ -6,7 +6,8 @@
 - Default branch: `main`
 - Latest merged milestone: Phase 11 guarded YOLO policy (`feat: add guarded yolo policy`, PR #12)
 - Current working branch: `phase-12-n8n-import-dry-run-validation`
-- Current PR target: Phase 12 real n8n import/dry-run validation
+- Current PR target: Phase 12 real n8n import/dry-run validation — PR #13 open and CI green: `https://github.com/Jdelg718/BotFucker/pull/13`
+- Tomorrow start: merge PR #13 if still green, then branch from updated `main` for Phase 13 Reviewed Action Bridge Promotion Plan
 - Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, and real n8n import validation results
 - Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
 
@@ -69,7 +70,8 @@ These are non-negotiable:
 Run from repo root:
 
 ```bash
-python3 -m py_compile outreach_filter.py botfucker/*.py
+python3 scripts/validate_n8n_workflow_exports.py
+python3 -m py_compile outreach_filter.py botfucker/*.py scripts/validate_n8n_workflow_exports.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -124,7 +126,8 @@ If this handoff update has been merged after that, the top commit will be newer.
 ### Verify locally
 
 ```bash
-python3 -m py_compile outreach_filter.py botfucker/*.py
+python3 scripts/validate_n8n_workflow_exports.py
+python3 -m py_compile outreach_filter.py botfucker/*.py scripts/validate_n8n_workflow_exports.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -309,9 +312,17 @@ Do not add real OAuth. Do not add provider credentials. Do not attach Gmail/Micr
 - Deterministic classifier still needs real-world tuning.
 - Optional LLM classifier exists only as a provider hook; no real provider wiring or credentials are implemented.
 - No production OAuth yet.
-- n8n workflow package needs real local import testing against Kent's actual n8n instance before activation.
+- Real n8n import validation passed on n8n-vps with sample-only dry-run and cleanup; do not activate those workflows without a separate reviewed bridge-promotion plan.
 - n8n approved action bridge is dry-run only; live provider actions still need a separate explicit reviewed workflow.
 - YOLO guardrails exist but live provider actions still require explicit operator configuration and must not be casually enabled.
+
+## Tomorrow Restart
+
+- PR #13 is open and CI green: `https://github.com/Jdelg718/BotFucker/pull/13`.
+- First move tomorrow: re-check PR #13, merge if green, pull `main`, branch Phase 13.
+- Phase 13 target: **Reviewed Action Bridge Promotion Plan**.
+- Do **not** add OAuth, provider credentials, or live n8n provider mutation nodes.
+- Keep live provider execution separate, reviewed, audited, deduped by processed `audit_id`, rollback-ready, and security/ops-reviewed.
 
 ## Product Voice
 

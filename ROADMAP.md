@@ -373,6 +373,14 @@ Recommended scope:
 
 OAuth can still wait. We proved the n8n package imports and dry-runs in the real beast. Next is a promotion plan for one action type at a time, because wiring live mail mutation without a checklist is how you manufacture regret at scale.
 
+### Tomorrow restart checklist
+
+1. Re-check PR #13 CI and mergeability.
+2. Squash-merge PR #13 into `main` if still green.
+3. Pull updated `main` and create Phase 13 branch.
+4. Build **Reviewed Action Bridge Promotion Plan** only — still no OAuth, no provider credentials, no live action node activation.
+5. Use tests/docs to prove the promotion plan keeps credentials in n8n, persists processed `audit_id` state, and requires rollback/security/operator review.
+
 ## Team Utilization
 
 - **Amy**: orchestrates scope, keeps phases honest, and blocks shiny-object OAuth detours.
