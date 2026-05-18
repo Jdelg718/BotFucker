@@ -341,6 +341,29 @@ Acceptance criteria:
 - Ledger stores IDs/status only, not message body/header/credential material.
 - No OAuth, no provider credentials, no live provider mutation nodes, and no checked-in n8n activation changes are added.
 
+### Phase 15 — Emergency-Stop Bridge Rehearsal ✅
+
+Status: implemented on `phase-15-emergency-stop-bridge-rehearsal`.
+
+Goal: prove the emergency-stop and dry-run bridge path against the durable ledger before any live provider mutation exists.
+
+Delivered:
+
+- `botfucker.bridge_rehearsal.rehearse_approved_actions()` dry-run-only bridge rehearsal
+- emergency-stop default that exits before claiming the durable ledger
+- dry-run path that claims the ledger and marks `dry_run_logged` without provider execution
+- duplicate replay handling that returns `duplicate_skipped`
+- docs in `docs/bridge-rehearsal.md`
+- tests proving emergency stop, dry-run logging, duplicate skip, live-mode rejection, and unsafe-action rejection
+
+Acceptance criteria:
+
+- Emergency stop creates no ledger row and no provider execution.
+- Dry-run remains mandatory; `dry_run=False` fails closed.
+- Duplicate approved-action exports are skipped by durable `audit_id`.
+- Provider execution remains `not_performed`.
+- No OAuth, provider credentials, provider API calls, or live mutation nodes are added.
+
 ## Local Kodex/Codex Demo Plan
 
 Kent is pulling this locally onto Kodex/Codex next. The demo should show what exists now, not pretend Phase 8 is already done. Revolutionary concept, apparently.
@@ -387,27 +410,32 @@ Use fake or sanitized JSON only. Real mailbox payloads stay out of the repo.
 
 ## Near-Term Recommendation
 
-After Phase 14 is reviewed and merged, the next PR should be **Phase 15: emergency-stop proof or sandbox-only bridge rehearsal**, not broad OAuth implementation.
+After Phase 15 is reviewed and merged, the next PR should be **Phase 16: Microsoft Outlook warning-draft sandbox contract**, not broad OAuth implementation.
+
+Kent selected the first provider/action target:
+
+- Provider: Microsoft Outlook
+- First action: create/save a warning draft only
+- Scope: sandbox/manual reviewed bridge contract first; no send-reply mutation yet
 
 Recommended scope:
 
 - keep one provider/action pair only (`approve_warning`)
-- use the durable bridge ledger before any provider mutation
+- document the exact sandbox mailbox/provider target Kent wants to use
 - keep credentials in n8n only
 - keep dry-run as the default path
-- prove emergency stop exits before provider mutation
-- require provider-specific sandbox/manual tests
+- map the Phase 15 rehearsal outcomes onto an inactive n8n/operator checklist
 - require Rex/Gus security/ops review before any live mutation node is connected
 
-OAuth can still wait. Phase 14 gives the bridge a seatbelt: durable dedupe before action. Next is proving the brakes, not flooring it into a live inbox.
+OAuth can still wait. Phase 15 proves the brakes in code. Next is picking the sandbox road — not handing the robot live mailbox keys because apparently we enjoy learning by fire.
 
-### Restart checklist after Phase 14
+### Restart checklist after Phase 15
 
-1. Re-check Phase 14 branch CI and mergeability.
-2. Squash-merge Phase 14 into `main` if still green.
-3. Pull updated `main` and create a Phase 15 branch.
-4. Keep exactly one sandbox provider/action pair, likely `approve_warning` only if Kent explicitly wants reply-send tested.
-5. Prove emergency-stop and dry-run behavior against the durable ledger before wiring any provider mutation.
+1. Re-check Phase 15 PR CI and mergeability.
+2. Squash-merge Phase 15 into `main` if still green.
+3. Use Microsoft Outlook as the selected sandbox provider target.
+4. Limit the first provider/action pair to warning draft creation/save only; do not send replies.
+5. Keep provider credentials inside n8n/operator infrastructure only; do not put secrets in BotFucker.
 
 ## Team Utilization
 

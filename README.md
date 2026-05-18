@@ -19,6 +19,7 @@ The current core is split into reusable modules under `botfucker/`:
 - `history.py` tracks sender history, warning counts, and strike levels in SQLite.
 - `review_store.py` persists local review queue items and audit events in SQLite.
 - `bridge_ledger.py` provides a durable bridge ledger scaffold keyed by approved-action `audit_id` values.
+- `bridge_rehearsal.py` proves emergency-stop and dry-run bridge behavior without provider execution.
 - `webhook_contract.py` normalizes bounded n8n/webhook email JSON into local review items.
 - `review_cli.py` provides a provider-safe local review workflow around seeded/imported items.
 - `responses.py` contains human-reviewable warning templates.
@@ -39,6 +40,7 @@ See [DESIGN.md](DESIGN.md) for the proposed architecture and roadmap.
 - Exports approved local audit events as an idempotent JSON bundle for an n8n/provider bridge.
 - Provides an inactive n8n approved-action bridge starter that validates/dedupes actions in dry-run mode.
 - Provides a Phase 14 durable bridge ledger scaffold for recording processed `audit_id` state before provider mutation.
+- Provides a Phase 15 dry-run bridge rehearsal that proves emergency stop and duplicate-skip behavior before provider mutation.
 - Keeps provider credentials and live mailbox side effects outside the local UI and review queue.
 
 ## Safety First
