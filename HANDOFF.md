@@ -4,9 +4,9 @@
 
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
-- Latest merged milestone: Phase 16 Microsoft Outlook Warning-Draft Sandbox Contract (`0377242`)
-- Current working branch: `phase-17-inactive-outlook-warning-draft-workflow-scaffold`
-- Current PR target: Phase 17 Inactive Outlook Warning-Draft Workflow Scaffold — docs/tests/workflow scaffold only, no credentials/no activation/no mail delivery
+- Latest merged milestone: Phase 17 Inactive Outlook Warning-Draft Workflow Scaffold (`b17eb4b`, PR #18)
+- Current working branch: `main` after Phase 17 merge
+- Current PR target: none open; next PR should be Phase 18 sandbox import/rehearsal or operator validation
 - Selected next provider/action target: sandbox import/rehearsal or operator validation of the inactive Microsoft Outlook warning-draft scaffold; no live send/OAuth
 - Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, real n8n import validation results, durable bridge ledger dedupe scaffold, emergency-stop bridge rehearsal, and inactive/manual Outlook warning-draft scaffold
 - Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
@@ -129,10 +129,10 @@ git log --oneline -5
 Expected current top commit:
 
 ```text
-713bc7f feat: add guarded yolo policy (#12)
+b17eb4b feat: add inactive Outlook warning-draft workflow scaffold (#18)
 ```
 
-If this handoff update has been merged after that, the top commit will be newer. The important part is that PR #12 content is present.
+If this handoff update has been merged after that, the top commit will be newer. The important part is that Phase 17 content is present and the workflow remains inactive/manual.
 
 ### Verify locally
 
@@ -317,14 +317,14 @@ You are working on BotFucker, an AI-era inbox defense app.
 
 Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, docs/webhook-contract.md, docs/n8n-workflow.md, docs/n8n-approved-action-bridge.md, docs/n8n-import-validation.md, docs/provider-auth-plan.md, docs/reviewed-action-bridge-promotion-plan.md, docs/bridge-ledger-scaffold.md, docs/bridge-rehearsal.md, docs/microsoft-outlook-warning-draft-sandbox.md, and docs/n8n-outlook-warning-draft-scaffold.md.
 
-First, verify the current Phase 17 branch without changing behavior:
+First, verify current `main` without changing behavior:
 - run python3 scripts/validate_n8n_workflow_exports.py
 - run python3 -m py_compile outreach_filter.py botfucker/*.py scripts/validate_n8n_workflow_exports.py
 - run python3 -m unittest discover -s tests -v
 - inspect docs/n8n-outlook-warning-draft-scaffold.json and docs/n8n-outlook-warning-draft-scaffold.md
 - confirm the workflow is inactive/manual, has no credentials, and keeps the Graph createReply placeholder disabled and unconnected
 
-Then review Phase 17 only: Inactive Outlook Warning-Draft Workflow Scaffold.
+Then plan Phase 18 only: sandbox import/rehearsal or operator validation of the inactive Outlook warning-draft scaffold.
 
 Do not add real OAuth. Do not add provider credentials. Do not activate n8n. Do not connect live Microsoft provider delivery. Preserve the provider boundary: the next step is sandbox import/rehearsal or operator validation, not live send/OAuth.
 ```
@@ -349,8 +349,8 @@ Do not add real OAuth. Do not add provider credentials. Do not activate n8n. Do 
 
 ## Tomorrow Restart
 
-- Phase 17 branch is local: `phase-17-inactive-outlook-warning-draft-workflow-scaffold`.
-- First move next: re-check tests, review diff, and open/squash Phase 17 if green.
+- Phase 17 is merged to `main` as PR #18 (`b17eb4b`).
+- First move next: start Phase 18 from updated `main`, re-check tests, then import/rehearse the inactive scaffold in sandbox only.
 - Phase 18 target should be sandbox import/rehearsal or operator validation of the inactive Outlook warning-draft scaffold.
 - Do **not** add OAuth, provider credentials, activate n8n, or connect live provider delivery.
 - Keep live provider execution separate, reviewed, audited, deduped by processed `audit_id`, rollback-ready, and security/ops-reviewed.

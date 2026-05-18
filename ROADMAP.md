@@ -466,7 +466,7 @@ Acceptance criteria:
 
 ## Near-Term Recommendation
 
-After Phase 17 is reviewed and merged, the next PR should be **Phase 18: sandbox import/rehearsal and operator validation for the inactive Outlook draft scaffold**, not live send/OAuth.
+Phase 17 is merged on `main` as PR #18 (`b17eb4b`). The next PR should be **Phase 18: sandbox import/rehearsal and operator validation for the inactive Outlook draft scaffold**, not live send/OAuth.
 
 Recommended scope:
 
@@ -479,13 +479,15 @@ Recommended scope:
 
 OAuth can still wait. The next useful work is proving the inactive scaffold imports and rehearses cleanly, not handing the robot live mailbox keys because apparently we enjoy learning by fire.
 
-### Restart checklist after Phase 17
+### Restart checklist for Phase 18
 
-1. Re-check Phase 17 PR CI and mergeability.
-2. Squash-merge Phase 17 into `main` if still green.
+1. Start from updated `main` at or after `b17eb4b`.
+2. Re-run `python3 scripts/validate_n8n_workflow_exports.py` and the full unit suite before touching n8n.
 3. Import only the inactive/manual scaffold into sandbox n8n for rehearsal.
-4. Keep the provider action to create/save draft only; do not perform live delivery.
-5. Keep provider credentials inside n8n/operator infrastructure only; do not put secrets in BotFucker.
+4. Run the manual path with emergency stop on and fake input only.
+5. Confirm the disabled Graph `createReply` placeholder remains disconnected unless Rex/Gus approve a sandbox-only draft rehearsal.
+6. Keep the provider action to create/save draft only; do not perform live delivery.
+7. Keep provider credentials inside n8n/operator infrastructure only; do not put secrets in BotFucker.
 
 ## Team Utilization
 
