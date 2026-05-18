@@ -1,0 +1,20 @@
+{
+  "schema": "botfucker.approved_actions.v1",
+  "generated_at": "2026-05-14T00:00:00Z",
+  "safety_scope": "provider_action_export_only",
+  "actions": [
+    {
+      "audit_id": "audit-sample-0001",
+      "item_id": "sample-review-0001",
+      "message_id": "sample-message-0001@example.invalid",
+      "thread_id": "sample-thread-0001",
+      "provider": "sample",
+      "approved_action": "approve_warning",
+      "approved_actor": "local-reviewer@example.invalid",
+      "approved_at": "2026-05-14T00:00:00Z",
+      "draft_reply": "Sample warning reply for dry-run validation only.",
+      "provider_execution": "not_performed",
+      "safety_scope": "provider_action_export_only"
+    }
+  ]
+}

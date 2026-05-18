@@ -1,4 +1,5 @@
 {
+  "id": "botfucker-local-review-import-v1",
   "name": "BotFucker Local Review Import",
   "nodes": [
     {
@@ -63,7 +64,7 @@
     {
       "parameters": {
         "operation": "write",
-        "fileName": "={{ $env.BOTFUCKER_N8N_MESSAGES || 'n8n-messages.json' }}",
+        "fileName": "={{ $env.BOTFUCKER_N8N_MESSAGES || '/home/node/.n8n-files/n8n-messages.json' }}",
         "dataPropertyName": "data",
         "options": {}
       },
@@ -79,7 +80,7 @@
     },
     {
       "parameters": {
-        "command": "cd \"${BOTFUCKER_REPO:-/path/to/BotFucker}\" && python3 -m botfucker.review_cli --db \"${BOTFUCKER_REVIEW_DB:-botfucker_review.sqlite3}\" import-webhook-json \"${BOTFUCKER_N8N_MESSAGES:-n8n-messages.json}\""
+        "command": "cd \"${BOTFUCKER_REPO:-/path/to/BotFucker}\" && python3 -m botfucker.review_cli --db \"${BOTFUCKER_REVIEW_DB:-botfucker_review.sqlite3}\" import-webhook-json \"${BOTFUCKER_N8N_MESSAGES:-/home/node/.n8n-files/n8n-messages.json}\""
       },
       "id": "import-into-local-review-queue",
       "name": "Import Into Local Review Queue",
