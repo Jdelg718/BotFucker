@@ -94,7 +94,7 @@
     },
     {
       "parameters": {
-        "content": "Provider boundary notes:\n- n8n fetches mail.\n- BotFucker imports bounded JSON into local SQLite.\n- No send/move/delete/archive/provider-list changes happen here.\n- Run the UI separately: python3 -m botfucker.local_ui --db botfucker_review.sqlite3",
+        "content": "Provider boundary notes:\n- n8n fetches mail.\n- BotFucker imports bounded JSON into local SQLite.\n- No mailbox mutation or provider-list changes happen here.\n- Run the UI separately: python3 -m botfucker.local_ui --db botfucker_review.sqlite3",
         "height": 260,
         "width": 360
       },

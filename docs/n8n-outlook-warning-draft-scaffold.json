@@ -1,0 +1,97 @@
+{
+  "id": "botfucker-outlook-warning-draft-scaffold-v1",
+  "name": "BotFucker Outlook Warning Draft Scaffold",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-980, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sample = {\n  schema: 'botfucker.approved_actions.v1',\n  safety_scope: 'provider_action_export_only',\n  actions: [\n    {\n      audit_id: 'audit-outlook-draft-sample-0001',\n      item_id: 'review-item-sample-0001',\n      provider: 'microsoft_outlook',\n      approved_action: 'approve_warning',\n      provider_execution: 'not_performed',\n      message_id: 'AAMkAGI2FAKE_MESSAGE_ID',\n      warning_body: 'This is a fake, human-approved warning draft body for sandbox rehearsal only.'\n    }\n  ]\n};\nreturn [{ json: sample }];"
+      },
+      "id": "sample-approved-action-bundle",
+      "name": "Sample Approved Action Bundle",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-740, 0],
+      "notes": "Fake approved-action input. Replace with controlled test input only during sandbox rehearsal."
+    },
+    {
+      "parameters": {
+        "jsCode": "const emergencyStopRaw = String($env.BOTFUCKER_EMERGENCY_STOP || 'true').toLowerCase();\nconst emergencyStop = !['0', 'false', 'off', 'no'].includes(emergencyStopRaw);\nif (emergencyStop) {\n  return [{ json: { scaffold_status: 'blocked_by_emergency_stop', provider_execution: 'not_performed' } }];\n}\nconst bundle = $input.first().json || {};\nif (bundle.schema !== 'botfucker.approved_actions.v1') {\n  throw new Error('Unexpected approved action schema');\n}\nif (bundle.safety_scope !== 'provider_action_export_only') {\n  throw new Error('Unexpected safety scope');\n}\nconst processedRaw = $env.BOTFUCKER_PROCESSED_AUDIT_IDS || '';\nconst processedAuditIds = new Set(processedRaw.split(',').map((value) => value.trim()).filter(Boolean));\nconst actions = Array.isArray(bundle.actions) ? bundle.actions : [];\nreturn actions.filter((action) => {\n  const provider = String(action.provider || '').toLowerCase();\n  return action.audit_id\n    && !processedAuditIds.has(action.audit_id)\n    && action.provider_execution === 'not_performed'\n    && action.approved_action === 'approve_warning'\n    && ['outlook', 'microsoft_outlook'].includes(provider)\n    && action.message_id\n    && action.warning_body;\n}).map((action) => ({\n  json: {\n    ...action,\n    provider: 'microsoft_outlook',\n    draft_only: true,\n    graph_operation: 'createReply',\n    scaffold_status: 'validated_for_disabled_draft_step'\n  }\n}));"
+      },
+      "id": "validate-emergency-stop-and-dedupe",
+      "name": "Validate Emergency Stop And Dedupe",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-500, 0],
+      "notes": "Fails closed by default via BOTFUCKER_EMERGENCY_STOP. Uses audit_id for duplicate skip before any provider-side draft step."
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item) => {\n  const input = item.json || {};\n  if (input.scaffold_status === 'blocked_by_emergency_stop') {\n    return {\n      json: {\n        ...input,\n        provider_execution: 'not_performed',\n        draft_only: false,\n        graph_operation: 'none',\n        note: 'Emergency stop is on; scaffold is blocked before any draft readiness signal.'\n      }\n    };\n  }\n  return {\n    json: {\n      audit_id: input.audit_id,\n      item_id: input.item_id,\n      provider: 'microsoft_outlook',\n      approved_action: 'approve_warning',\n      provider_execution: 'not_performed',\n      draft_only: true,\n      graph_operation: 'createReply',\n      scaffold_status: 'ready_for_manual_sandbox_rehearsal',\n      note: 'The Graph draft node is disabled and unconnected in this export.'\n    }\n  };\n});"
+      },
+      "id": "draft-only-safety-summary",
+      "name": "Draft Only Safety Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-260, 0],
+      "notes": "Main path logs draft-only readiness. It does not call Microsoft Graph."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.microsoft.com/v1.0/me/messages/{{$json.message_id}}/createReply",
+        "sendBody": false,
+        "options": {}
+      },
+      "id": "disabled-graph-create-reply-draft-placeholder",
+      "name": "Disabled Graph createReply Draft Placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-260, 280],
+      "disabled": true,
+      "notes": "Disabled and unconnected placeholder for a future operator-owned Microsoft Graph draft creation rehearsal."
+    },
+    {
+      "parameters": {
+        "content": "Outlook warning draft scaffold:\n- inactive workflow export\n- manual trigger only\n- emergency stop defaults on\n- audit_id duplicate guard\n- main path logs readiness only\n- Graph createReply placeholder is disabled and unconnected",
+        "height": 280,
+        "width": 380
+      },
+      "id": "safety-boundary-notes",
+      "name": "Safety Boundary Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-740, -360]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Sample Approved Action Bundle", "type": "main", "index": 0}]]
+    },
+    "Sample Approved Action Bundle": {
+      "main": [[{"node": "Validate Emergency Stop And Dedupe", "type": "main", "index": 0}]]
+    },
+    "Validate Emergency Stop And Dedupe": {
+      "main": [[{"node": "Draft Only Safety Summary", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "staticData": null,
+  "tags": [
+    {"name": "botfucker"},
+    {"name": "outlook-warning-draft"},
+    {"name": "scaffold"}
+  ],
+  "active": false,
+  "versionId": "botfucker-outlook-warning-draft-scaffold-v1"
+}

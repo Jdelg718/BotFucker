@@ -31,6 +31,7 @@ Merged through PR #8:
 - reviewed live-bridge promotion gate
 - durable bridge ledger scaffold for processed `audit_id` state before provider mutation
 - tests for classifier/history/safety/review/webhook/docs/branding/bridge-ledger behavior
+- inactive/manual Microsoft Outlook warning-draft workflow scaffold with disabled Graph `createReply` placeholder
 
 The repo is ready to pull locally into Kodex/Codex and demonstrate the local cockpit without connecting to any live mail provider.
 
@@ -414,6 +415,12 @@ Status: implemented on `phase-16-outlook-warning-draft-sandbox-contract`.
 
 Goal: document Kent's selected first provider/action target without adding OAuth, credentials, or live mutation behavior.
 
+Selected target:
+
+- Provider: Microsoft Outlook
+- First action: create/save a warning draft only
+- Scope: sandbox/manual reviewed bridge contract first; no send-reply mutation yet
+
 Delivered:
 
 - `docs/microsoft-outlook-warning-draft-sandbox.md`
@@ -432,33 +439,52 @@ Acceptance criteria:
 - Credentials stay outside BotFucker and inside n8n/operator infrastructure.
 - Current workflow exports remain provider-call-free and credential-free.
 
+### Phase 17 — Inactive Outlook Warning-Draft Workflow Scaffold ✅
+
+Status: implemented on `phase-17-inactive-outlook-warning-draft-workflow-scaffold`.
+
+Goal: provide an inactive/manual n8n scaffold for the selected Microsoft Outlook warning-draft path without adding credentials, activation, live provider execution, or mail delivery.
+
+Delivered:
+
+- `docs/n8n-outlook-warning-draft-scaffold.json`
+- `docs/n8n-outlook-warning-draft-scaffold.md`
+- manual-trigger-only inactive workflow export
+- fake approved-action input and draft-only safety summary
+- emergency-stop default-on check and `audit_id` duplicate guard
+- disabled, unconnected Microsoft Graph `createReply` HTTP placeholder
+- validator/test coverage proving no credential material, no forbidden mailbox mutation strings, and no connected provider action step
+- operator docs for emergency stop, dedupe, rollback, and manual deletion of sandbox drafts
+
+Acceptance criteria:
+
+- Workflow remains `active: false` and manual-triggered only.
+- Placeholder Graph draft node is disabled and unconnected.
+- No credentials, tokens, or live auth material are committed.
+- No forbidden send/delete/move/archive/read-state/rules/contact/settings action is present in the workflow export.
+- Next step is sandbox import/rehearsal or operator validation, not live delivery or broad OAuth.
+
 ## Near-Term Recommendation
 
-After Phase 16 is reviewed and merged, the next PR should be **Phase 17: inactive Microsoft Outlook warning-draft workflow scaffold**, not broad OAuth implementation.
-
-Kent selected the first provider/action target:
-
-- Provider: Microsoft Outlook
-- First action: create/save a warning draft only
-- Scope: sandbox/manual reviewed bridge contract first; no send-reply mutation yet
+After Phase 17 is reviewed and merged, the next PR should be **Phase 18: sandbox import/rehearsal and operator validation for the inactive Outlook draft scaffold**, not live send/OAuth.
 
 Recommended scope:
 
-- keep one provider/action pair only (`approve_warning`)
-- document the exact sandbox mailbox/provider target Kent wants to use
-- keep credentials in n8n only
-- keep dry-run as the default path
-- map the Phase 15 rehearsal outcomes onto an inactive n8n/operator checklist
-- require Rex/Gus security/ops review before any live mutation node is connected
+- import the Phase 17 scaffold into a sandbox n8n instance as inactive
+- verify the manual path with emergency stop on and fake input only
+- verify the disabled Graph placeholder remains disconnected unless Rex/Gus approve a sandbox-only rehearsal
+- document observed n8n import behavior, cleanup, and rollback notes
+- keep credentials in n8n/operator infrastructure only
+- keep the provider action to Microsoft Graph `createReply` draft creation only
 
-OAuth can still wait. Phase 16 picks the sandbox road. Next is building the inactive/manual Outlook draft scaffold — not handing the robot live mailbox keys because apparently we enjoy learning by fire.
+OAuth can still wait. The next useful work is proving the inactive scaffold imports and rehearses cleanly, not handing the robot live mailbox keys because apparently we enjoy learning by fire.
 
-### Restart checklist after Phase 16
+### Restart checklist after Phase 17
 
-1. Re-check Phase 16 PR CI and mergeability.
-2. Squash-merge Phase 16 into `main` if still green.
-3. Build only an inactive/manual Microsoft Outlook warning-draft workflow scaffold.
-4. Keep the provider action to create/save draft only; do not send replies.
+1. Re-check Phase 17 PR CI and mergeability.
+2. Squash-merge Phase 17 into `main` if still green.
+3. Import only the inactive/manual scaffold into sandbox n8n for rehearsal.
+4. Keep the provider action to create/save draft only; do not perform live delivery.
 5. Keep provider credentials inside n8n/operator infrastructure only; do not put secrets in BotFucker.
 
 ## Team Utilization
