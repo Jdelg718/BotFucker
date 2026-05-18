@@ -408,9 +408,33 @@ python3 -m botfucker.review_cli --db botfucker_review.sqlite3 import-webhook-jso
 
 Use fake or sanitized JSON only. Real mailbox payloads stay out of the repo.
 
+### Phase 16 — Microsoft Outlook Warning-Draft Sandbox Contract ✅
+
+Status: implemented on `phase-16-outlook-warning-draft-sandbox-contract`.
+
+Goal: document Kent's selected first provider/action target without adding OAuth, credentials, or live mutation behavior.
+
+Delivered:
+
+- `docs/microsoft-outlook-warning-draft-sandbox.md`
+- Microsoft Graph `createReply` reference for draft creation
+- explicit Outlook warning-draft-only target
+- explicit `/send` and reply-send prohibition
+- n8n/operator credential boundary
+- acceptance criteria for a future implementation PR
+- tests proving the contract exists and current n8n workflows still contain no Outlook send or credential material
+
+Acceptance criteria:
+
+- Provider target is Microsoft Outlook.
+- First action is warning draft creation/save only.
+- No send-reply mutation is allowed.
+- Credentials stay outside BotFucker and inside n8n/operator infrastructure.
+- Current workflow exports remain provider-call-free and credential-free.
+
 ## Near-Term Recommendation
 
-After Phase 15 is reviewed and merged, the next PR should be **Phase 16: Microsoft Outlook warning-draft sandbox contract**, not broad OAuth implementation.
+After Phase 16 is reviewed and merged, the next PR should be **Phase 17: inactive Microsoft Outlook warning-draft workflow scaffold**, not broad OAuth implementation.
 
 Kent selected the first provider/action target:
 
@@ -427,14 +451,14 @@ Recommended scope:
 - map the Phase 15 rehearsal outcomes onto an inactive n8n/operator checklist
 - require Rex/Gus security/ops review before any live mutation node is connected
 
-OAuth can still wait. Phase 15 proves the brakes in code. Next is picking the sandbox road — not handing the robot live mailbox keys because apparently we enjoy learning by fire.
+OAuth can still wait. Phase 16 picks the sandbox road. Next is building the inactive/manual Outlook draft scaffold — not handing the robot live mailbox keys because apparently we enjoy learning by fire.
 
-### Restart checklist after Phase 15
+### Restart checklist after Phase 16
 
-1. Re-check Phase 15 PR CI and mergeability.
-2. Squash-merge Phase 15 into `main` if still green.
-3. Use Microsoft Outlook as the selected sandbox provider target.
-4. Limit the first provider/action pair to warning draft creation/save only; do not send replies.
+1. Re-check Phase 16 PR CI and mergeability.
+2. Squash-merge Phase 16 into `main` if still green.
+3. Build only an inactive/manual Microsoft Outlook warning-draft workflow scaffold.
+4. Keep the provider action to create/save draft only; do not send replies.
 5. Keep provider credentials inside n8n/operator infrastructure only; do not put secrets in BotFucker.
 
 ## Team Utilization
