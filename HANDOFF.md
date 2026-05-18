@@ -4,11 +4,10 @@
 
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
-- Latest merged milestone: Phase 11 guarded YOLO policy (`feat: add guarded yolo policy`, PR #12)
-- Current working branch: `phase-12-n8n-import-dry-run-validation`
-- Current PR target: Phase 12 real n8n import/dry-run validation — PR #13 open and CI green: `https://github.com/Jdelg718/BotFucker/pull/13`
-- Tomorrow start: merge PR #13 if still green, then branch from updated `main` for Phase 13 Reviewed Action Bridge Promotion Plan
-- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, and real n8n import validation results
+- Latest merged milestone: Phase 12 real n8n import/dry-run validation (`docs: validate n8n import dry run`, PR #13)
+- Current working branch: `phase-13-reviewed-action-bridge-promotion-plan`
+- Current PR target: Phase 13 Reviewed Action Bridge Promotion Plan — docs/tests only, no OAuth/live provider mutation
+- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, real n8n import validation results, and reviewed bridge-promotion gate
 - Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
 
 ## What BotFucker Is
@@ -35,6 +34,7 @@ docs/n8n-workflow.md          # n8n import operator guide and safety checklist
 docs/n8n-approved-action-bridge.json # importable n8n approved-action dry-run bridge
 docs/n8n-approved-action-bridge.md   # approved-action bridge operator guide
 docs/provider-auth-plan.md    # provider auth/action boundary plan
+docs/reviewed-action-bridge-promotion-plan.md # Phase 13 reviewed live-bridge gate; no OAuth/live mutation
 README.md                     # user-facing setup and project overview
 outreach_filter.py            # compatibility CLI wrapper
 botfucker/models.py           # normalized email/classification/review models
@@ -267,16 +267,17 @@ python3 -m unittest discover -s tests -v
 
 ## Next PR Recommendation
 
-Build **Phase 13: Reviewed Action Bridge Promotion Plan**, not OAuth.
+After Phase 13, keep OAuth on hold. The next safe step is either documentation review cleanup for the promotion gate or a mocked/sandbox-only processed-audit state prototype that still performs no live provider mutation.
 
-Suggested scope:
+Do **not** add real OAuth, provider credentials, or live n8n provider mutation nodes until the Phase 13 gate has Rex/Gus review and provider-specific sandbox evidence.
 
-1. Define how one provider action type graduates from dry-run to live review.
-2. Keep credentials in n8n only.
-3. Design persistent processed-`audit_id` state.
-4. Document rollback and emergency stop.
-5. Require provider-specific sandbox/manual tests.
-6. Require Rex/Gus security/ops review before any live mutation node is connected.
+Suggested follow-up scope:
+
+1. Review Phase 13 plan with Rex/Gus.
+2. Decide the first provider/action pair for sandbox review, likely `approve_warning` only.
+3. Prototype processed-`audit_id` state with fake/sample data only.
+4. Keep credentials in n8n only.
+5. Require rollback and emergency-stop proof before any live provider action node is connected.
 
 ## Suggested Prompt for Kodex/Codex
 

@@ -294,11 +294,13 @@ Acceptance criteria:
 - No Gmail/Microsoft/IMAP/SMTP mutation credentials are attached.
 - Activation remains manual and reviewed.
 
-### Phase 13 — Review Action Bridge Promotion Plan
+### Phase 13 — Reviewed Action Bridge Promotion Plan ✅
+
+Status: implemented on `phase-13-reviewed-action-bridge-promotion-plan`.
 
 Goal: define the reviewed path from dry-run logs to a live provider bridge without adding OAuth/provider mutation directly to BotFucker core.
 
-Deliverables:
+Delivered:
 
 - operator checklist for promoting one provider action type at a time
 - explicit credential ownership in n8n only
@@ -313,6 +315,7 @@ Acceptance criteria:
 - Only reviewed approved-action records are eligible.
 - Every provider mutation is idempotent, audited, and reversible where possible.
 - No live provider credentials are committed or exported.
+- No OAuth, live provider mutation nodes, or provider behavior changes are added by this phase.
 
 ## Local Kodex/Codex Demo Plan
 
@@ -360,26 +363,27 @@ Use fake or sanitized JSON only. Real mailbox payloads stay out of the repo.
 
 ## Near-Term Recommendation
 
-Next PR should be **Phase 13: Reviewed Action Bridge Promotion Plan**, not OAuth implementation.
+After Phase 13 is reviewed and merged, the next PR should be **Phase 14: durable bridge ledger design or sandbox-only live bridge scaffold**, not broad OAuth implementation.
 
 Recommended scope:
 
-- define how one provider action type graduates from dry-run to live review
+- choose one provider/action pair only
+- implement or document the durable processed-`audit_id` ledger before any provider mutation
 - keep credentials in n8n only
-- design persistent processed-`audit_id` state
-- document rollback and emergency stop
+- keep dry-run as the default path
+- prove emergency stop exits before provider mutation
 - require provider-specific sandbox/manual tests
 - require Rex/Gus security/ops review before any live mutation node is connected
 
-OAuth can still wait. We proved the n8n package imports and dry-runs in the real beast. Next is a promotion plan for one action type at a time, because wiring live mail mutation without a checklist is how you manufacture regret at scale.
+OAuth can still wait. We proved the n8n package imports and dry-runs in the real beast, and Phase 13 defines the promotion gate. Next is one tiny, reviewed step toward a provider bridge — not a live-mail fireworks show.
 
-### Tomorrow restart checklist
+### Restart checklist after Phase 13
 
-1. Re-check PR #13 CI and mergeability.
-2. Squash-merge PR #13 into `main` if still green.
-3. Pull updated `main` and create Phase 13 branch.
-4. Build **Reviewed Action Bridge Promotion Plan** only — still no OAuth, no provider credentials, no live action node activation.
-5. Use tests/docs to prove the promotion plan keeps credentials in n8n, persists processed `audit_id` state, and requires rollback/security/operator review.
+1. Re-check Phase 13 PR CI and mergeability.
+2. Squash-merge Phase 13 into `main` if still green.
+3. Pull updated `main` and create a Phase 14 branch.
+4. Pick exactly one sandbox provider/action pair, likely `approve_warning` only if Kent explicitly wants reply-send tested.
+5. Build durable dedupe/ledger scaffolding and emergency-stop proof before wiring any provider mutation.
 
 ## Team Utilization
 
