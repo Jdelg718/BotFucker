@@ -4,10 +4,11 @@
 
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
-- Latest merged milestone: Phase 13 Reviewed Action Bridge Promotion Plan (`docs: plan reviewed action bridge promotion`, main at 4619bf5)
-- Current working branch: `phase-14-durable-bridge-ledger`
-- Current PR target: Phase 14 Durable Bridge Ledger Scaffold — code/docs/tests only, no OAuth/live provider mutation
-- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, real n8n import validation results, reviewed bridge-promotion gate, and durable bridge ledger dedupe scaffold
+- Latest merged milestone: Phase 14 Durable Bridge Ledger Scaffold (`feat: add durable bridge ledger scaffold`, main at 8904d67)
+- Current working branch: `phase-15-emergency-stop-bridge-rehearsal`
+- Current PR target: Phase 15 Emergency-Stop Bridge Rehearsal — code/docs/tests only, dry-run-only, no OAuth/live provider mutation
+- Selected next provider/action target: Microsoft Outlook warning draft in sandbox/manual reviewed bridge contract; no send-reply mutation yet
+- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, real n8n import validation results, the Phase 13 Reviewed Action Bridge Promotion Plan, durable bridge ledger dedupe scaffold, and emergency-stop bridge rehearsal
 - Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
 
 ## What BotFucker Is
@@ -26,7 +27,7 @@ Important files:
 
 ```text
 DESIGN.md                     # v2 architecture and principles
-ROADMAP.md                    # phased product roadmap, current through Phase 12 n8n import validation
+ROADMAP.md                    # phased product roadmap, current through Phase 15 emergency-stop bridge rehearsal
 docs/n8n-import-validation.md # Phase 12 real n8n import/dry-run procedure and results
 docs/webhook-contract.md      # normalized n8n/webhook JSON contract
 docs/n8n-workflow.json        # importable n8n import starter workflow
@@ -36,6 +37,7 @@ docs/n8n-approved-action-bridge.md   # approved-action bridge operator guide
 docs/provider-auth-plan.md    # provider auth/action boundary plan
 docs/reviewed-action-bridge-promotion-plan.md # Phase 13 reviewed live-bridge gate; no OAuth/live mutation
 docs/bridge-ledger-scaffold.md # Phase 14 durable processed-audit ledger scaffold; no OAuth/live mutation
+docs/bridge-rehearsal.md       # Phase 15 emergency-stop/dry-run bridge rehearsal; no provider execution
 README.md                     # user-facing setup and project overview
 outreach_filter.py            # compatibility CLI wrapper
 botfucker/models.py           # normalized email/classification/review models
@@ -44,6 +46,7 @@ botfucker/history.py          # SQLite sender history + strike state
 botfucker/review_queue.py     # review item/audit models and sample data helpers
 botfucker/review_store.py     # durable SQLite review queue and audit store
 botfucker/bridge_ledger.py    # durable bridge processed-audit ledger scaffold
+botfucker/bridge_rehearsal.py # dry-run bridge rehearsal proving emergency stop and duplicate skip
 botfucker/review_cli.py       # durable local review CLI
 botfucker/webhook_contract.py # n8n/webhook payload sanitizer/import adapter
 botfucker/local_ui.py         # local browser review UI server
@@ -67,6 +70,7 @@ These are non-negotiable:
 - Local UI and review CLI actions affect SQLite review state only.
 - Provider-side actions are future bridge work, not local UI behavior.
 - The Phase 14 durable bridge ledger records `audit_id` state only (`bridge_ledger_state_only`) before provider mutation; it is not a provider action engine.
+- The Phase 15 bridge rehearsal is dry-run-only; emergency stop exits before ledger claim, and provider execution remains `not_performed`.
 
 ## Current Test Commands
 

@@ -24,7 +24,8 @@ PENDING = "pending"
 PROCESSED = "processed"
 FAILED = "failed"
 ROLLED_BACK = "rolled_back"
-VALID_STATUSES = {PENDING, PROCESSED, FAILED, ROLLED_BACK}
+DRY_RUN_LOGGED = "dry_run_logged"
+VALID_STATUSES = {PENDING, PROCESSED, FAILED, ROLLED_BACK, DRY_RUN_LOGGED}
 
 
 class BridgeLedgerError(ValueError):
@@ -211,6 +212,21 @@ class DurableBridgeLedger:
             processed_by_workflow=processed_by_workflow,
         )
 
+    def mark_dry_run_logged(
+        self,
+        audit_id: str,
+        *,
+        processed_by_workflow: str | None = None,
+    ) -> BridgeLedgerRecord:
+        """Record a dry-run rehearsal without provider execution."""
+
+        return self._update_status(
+            audit_id,
+            DRY_RUN_LOGGED,
+            provider_result_id="",
+            processed_by_workflow=processed_by_workflow,
+        )
+
     def _update_status(
         self,
         audit_id: str,
@@ -302,9 +318,10 @@ def _validate_status_transition(current: str, target: str) -> None:
     if current == target:
         return
     allowed = {
-        PENDING: {PROCESSED, FAILED, ROLLED_BACK},
+        PENDING: {PROCESSED, FAILED, ROLLED_BACK, DRY_RUN_LOGGED},
         FAILED: {ROLLED_BACK},
         PROCESSED: {ROLLED_BACK},
+        DRY_RUN_LOGGED: {ROLLED_BACK},
         ROLLED_BACK: set(),
     }
     if target not in allowed[current]:
