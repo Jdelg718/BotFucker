@@ -66,7 +66,7 @@ export BOTFUCKER_APPROVED_ACTIONS="/path/to/approved-actions.json"
 export BOTFUCKER_PROCESSED_AUDIT_IDS="audit-0001,audit-0002"
 ```
 
-`BOTFUCKER_PROCESSED_AUDIT_IDS` is the starter dry-run dedupe source. A later live bridge should replace that with durable storage, but it must still dedupe by `audit_id` before touching a provider.
+`BOTFUCKER_PROCESSED_AUDIT_IDS` is the starter dry-run dedupe source. Phase 14 adds a durable bridge ledger scaffold for the reviewed live-bridge path; live bridges must replace environment-variable dedupe with durable processed-`audit_id` state before touching a provider.
 
 ## Workflow behavior
 

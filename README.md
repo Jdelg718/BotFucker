@@ -18,6 +18,7 @@ The current core is split into reusable modules under `botfucker/`:
 - `classifier.py` returns structured deterministic classifications with reasons.
 - `history.py` tracks sender history, warning counts, and strike levels in SQLite.
 - `review_store.py` persists local review queue items and audit events in SQLite.
+- `bridge_ledger.py` provides a durable bridge ledger scaffold keyed by approved-action `audit_id` values.
 - `webhook_contract.py` normalizes bounded n8n/webhook email JSON into local review items.
 - `review_cli.py` provides a provider-safe local review workflow around seeded/imported items.
 - `responses.py` contains human-reviewable warning templates.
@@ -37,6 +38,7 @@ See [DESIGN.md](DESIGN.md) for the proposed architecture and roadmap.
 - Imports bounded n8n/webhook JSON after the provider layer has already fetched mail.
 - Exports approved local audit events as an idempotent JSON bundle for an n8n/provider bridge.
 - Provides an inactive n8n approved-action bridge starter that validates/dedupes actions in dry-run mode.
+- Provides a Phase 14 durable bridge ledger scaffold for recording processed `audit_id` state before provider mutation.
 - Keeps provider credentials and live mailbox side effects outside the local UI and review queue.
 
 ## Safety First
@@ -486,6 +488,23 @@ Artifact:
 - [`docs/reviewed-action-bridge-promotion-plan.md`](docs/reviewed-action-bridge-promotion-plan.md) — operator/security/ops gate for one-action-at-a-time live bridge review.
 
 The plan requires persistent processed-`audit_id` state, rollback and emergency-stop procedures, provider-specific sandbox/manual tests, and Rex/Gus review before any live mutation node is connected.
+
+## Phase 14 Durable Bridge Ledger Scaffold
+
+Phase 14 adds a durable bridge ledger scaffold for future reviewed provider bridges. It is not OAuth, not provider auth, and not live mailbox automation. The scaffold records approved-action `audit_id` state before provider mutation so a future bridge can fail closed on duplicates.
+
+Artifacts:
+
+- [`botfucker/bridge_ledger.py`](botfucker/bridge_ledger.py) — standard-library SQLite ledger keyed by `audit_id`, with `pending`, `processed`, `failed`, and `rolled_back` states.
+- [`docs/bridge-ledger-scaffold.md`](docs/bridge-ledger-scaffold.md) — operator/security notes for using the ledger before any provider mutation.
+
+Safety constraints:
+
+- effect scope is `bridge_ledger_state_only`
+- validates `botfucker.approved_actions.v1`, `provider_action_export_only`, and `provider_execution: not_performed`
+- stores IDs/status only, not subject, snippet, body, headers, OAuth tokens, API keys, passwords, cookies, or private provider headers
+- no OAuth, no provider credentials, and no live provider mutation nodes are added
+- checked-in n8n workflows remain inactive/dry-run starters
 
 ## Test Before Going Live
 
