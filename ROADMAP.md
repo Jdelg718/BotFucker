@@ -28,7 +28,9 @@ Merged through PR #8:
 - provider auth boundary plan
 - FF2K-branded local browser UI and hero art
 - HyperFrames animated/narrated product explainer under `promo/botfucker-animated-explainer/`
-- tests for classifier/history/safety/review/webhook/docs/branding behavior
+- reviewed live-bridge promotion gate
+- durable bridge ledger scaffold for processed `audit_id` state before provider mutation
+- tests for classifier/history/safety/review/webhook/docs/branding/bridge-ledger behavior
 
 The repo is ready to pull locally into Kodex/Codex and demonstrate the local cockpit without connecting to any live mail provider.
 
@@ -317,6 +319,28 @@ Acceptance criteria:
 - No live provider credentials are committed or exported.
 - No OAuth, live provider mutation nodes, or provider behavior changes are added by this phase.
 
+### Phase 14 — Durable Bridge Ledger Scaffold ✅
+
+Status: implemented on `phase-14-durable-bridge-ledger`.
+
+Goal: provide a durable processed-`audit_id` ledger scaffold that a future reviewed bridge can use before any provider mutation, without adding OAuth, credentials, or live mutation nodes.
+
+Delivered:
+
+- `botfucker.bridge_ledger.DurableBridgeLedger` SQLite scaffold keyed by `audit_id`
+- `pending`, `processed`, `failed`, and `rolled_back` statuses
+- `claim_action()` flow that inserts durable `pending` state before provider mutation
+- validation for `botfucker.approved_actions.v1`, `provider_action_export_only`, and `provider_execution: not_performed`
+- docs in `docs/bridge-ledger-scaffold.md`
+- tests proving dedupe, status transitions, unsafe export rejection, and no message-content/secret columns
+
+Acceptance criteria:
+
+- Durable state is keyed by `audit_id`.
+- Repeated claims of an `audit_id` do not acquire a second mutation slot.
+- Ledger stores IDs/status only, not message body/header/credential material.
+- No OAuth, no provider credentials, no live provider mutation nodes, and no checked-in n8n activation changes are added.
+
 ## Local Kodex/Codex Demo Plan
 
 Kent is pulling this locally onto Kodex/Codex next. The demo should show what exists now, not pretend Phase 8 is already done. Revolutionary concept, apparently.
@@ -363,27 +387,27 @@ Use fake or sanitized JSON only. Real mailbox payloads stay out of the repo.
 
 ## Near-Term Recommendation
 
-After Phase 13 is reviewed and merged, the next PR should be **Phase 14: durable bridge ledger design or sandbox-only live bridge scaffold**, not broad OAuth implementation.
+After Phase 14 is reviewed and merged, the next PR should be **Phase 15: emergency-stop proof or sandbox-only bridge rehearsal**, not broad OAuth implementation.
 
 Recommended scope:
 
-- choose one provider/action pair only
-- implement or document the durable processed-`audit_id` ledger before any provider mutation
+- keep one provider/action pair only (`approve_warning`)
+- use the durable bridge ledger before any provider mutation
 - keep credentials in n8n only
 - keep dry-run as the default path
 - prove emergency stop exits before provider mutation
 - require provider-specific sandbox/manual tests
 - require Rex/Gus security/ops review before any live mutation node is connected
 
-OAuth can still wait. We proved the n8n package imports and dry-runs in the real beast, and Phase 13 defines the promotion gate. Next is one tiny, reviewed step toward a provider bridge — not a live-mail fireworks show.
+OAuth can still wait. Phase 14 gives the bridge a seatbelt: durable dedupe before action. Next is proving the brakes, not flooring it into a live inbox.
 
-### Restart checklist after Phase 13
+### Restart checklist after Phase 14
 
-1. Re-check Phase 13 PR CI and mergeability.
-2. Squash-merge Phase 13 into `main` if still green.
-3. Pull updated `main` and create a Phase 14 branch.
-4. Pick exactly one sandbox provider/action pair, likely `approve_warning` only if Kent explicitly wants reply-send tested.
-5. Build durable dedupe/ledger scaffolding and emergency-stop proof before wiring any provider mutation.
+1. Re-check Phase 14 branch CI and mergeability.
+2. Squash-merge Phase 14 into `main` if still green.
+3. Pull updated `main` and create a Phase 15 branch.
+4. Keep exactly one sandbox provider/action pair, likely `approve_warning` only if Kent explicitly wants reply-send tested.
+5. Prove emergency-stop and dry-run behavior against the durable ledger before wiring any provider mutation.
 
 ## Team Utilization
 

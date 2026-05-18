@@ -4,10 +4,10 @@
 
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
-- Latest merged milestone: Phase 12 real n8n import/dry-run validation (`docs: validate n8n import dry run`, PR #13)
-- Current working branch: `phase-13-reviewed-action-bridge-promotion-plan`
-- Current PR target: Phase 13 Reviewed Action Bridge Promotion Plan — docs/tests only, no OAuth/live provider mutation
-- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, real n8n import validation results, and reviewed bridge-promotion gate
+- Latest merged milestone: Phase 13 Reviewed Action Bridge Promotion Plan (`docs: plan reviewed action bridge promotion`, main at 4619bf5)
+- Current working branch: `phase-14-durable-bridge-ledger`
+- Current PR target: Phase 14 Durable Bridge Ledger Scaffold — code/docs/tests only, no OAuth/live provider mutation
+- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, real n8n import validation results, reviewed bridge-promotion gate, and durable bridge ledger dedupe scaffold
 - Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
 
 ## What BotFucker Is
@@ -35,6 +35,7 @@ docs/n8n-approved-action-bridge.json # importable n8n approved-action dry-run br
 docs/n8n-approved-action-bridge.md   # approved-action bridge operator guide
 docs/provider-auth-plan.md    # provider auth/action boundary plan
 docs/reviewed-action-bridge-promotion-plan.md # Phase 13 reviewed live-bridge gate; no OAuth/live mutation
+docs/bridge-ledger-scaffold.md # Phase 14 durable processed-audit ledger scaffold; no OAuth/live mutation
 README.md                     # user-facing setup and project overview
 outreach_filter.py            # compatibility CLI wrapper
 botfucker/models.py           # normalized email/classification/review models
@@ -42,6 +43,7 @@ botfucker/classifier.py       # deterministic classifier
 botfucker/history.py          # SQLite sender history + strike state
 botfucker/review_queue.py     # review item/audit models and sample data helpers
 botfucker/review_store.py     # durable SQLite review queue and audit store
+botfucker/bridge_ledger.py    # durable bridge processed-audit ledger scaffold
 botfucker/review_cli.py       # durable local review CLI
 botfucker/webhook_contract.py # n8n/webhook payload sanitizer/import adapter
 botfucker/local_ui.py         # local browser review UI server
@@ -64,6 +66,7 @@ These are non-negotiable:
 - n8n/provider credentials stay in n8n or the provider layer, not BotFucker core.
 - Local UI and review CLI actions affect SQLite review state only.
 - Provider-side actions are future bridge work, not local UI behavior.
+- The Phase 14 durable bridge ledger records `audit_id` state only (`bridge_ledger_state_only`) before provider mutation; it is not a provider action engine.
 
 ## Current Test Commands
 
@@ -267,15 +270,15 @@ python3 -m unittest discover -s tests -v
 
 ## Next PR Recommendation
 
-After Phase 13, keep OAuth on hold. The next safe step is either documentation review cleanup for the promotion gate or a mocked/sandbox-only processed-audit state prototype that still performs no live provider mutation.
+After Phase 14, keep OAuth on hold. The next safe step is emergency-stop proof or a sandbox-only bridge rehearsal that uses the durable bridge ledger and still performs no production provider mutation.
 
 Do **not** add real OAuth, provider credentials, or live n8n provider mutation nodes until the Phase 13 gate has Rex/Gus review and provider-specific sandbox evidence.
 
 Suggested follow-up scope:
 
-1. Review Phase 13 plan with Rex/Gus.
-2. Decide the first provider/action pair for sandbox review, likely `approve_warning` only.
-3. Prototype processed-`audit_id` state with fake/sample data only.
+1. Review Phase 14 ledger scaffold with Rex/Gus.
+2. Keep the first provider/action pair to `approve_warning` only.
+3. Use processed-`audit_id` state before any provider mutation attempt.
 4. Keep credentials in n8n only.
 5. Require rollback and emergency-stop proof before any live provider action node is connected.
 
@@ -284,18 +287,18 @@ Suggested follow-up scope:
 ```text
 You are working on BotFucker, an AI-era inbox defense app.
 
-Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, docs/webhook-contract.md, docs/n8n-workflow.md, docs/n8n-approved-action-bridge.md, docs/n8n-import-validation.md, and docs/provider-auth-plan.md.
+Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, docs/webhook-contract.md, docs/n8n-workflow.md, docs/n8n-approved-action-bridge.md, docs/n8n-import-validation.md, docs/provider-auth-plan.md, docs/reviewed-action-bridge-promotion-plan.md, and docs/bridge-ledger-scaffold.md.
 
-First, verify the current Phase 12 branch without changing behavior:
+First, verify the current Phase 14 branch without changing behavior:
 - run python3 scripts/validate_n8n_workflow_exports.py
 - run python3 -m py_compile outreach_filter.py botfucker/*.py scripts/validate_n8n_workflow_exports.py
 - run python3 -m unittest discover -s tests -v
-- inspect docs/n8n-import-validation.md and samples/approved-actions.sample.json
-- confirm n8n workflows include explicit ids, are inactive, and use /home/node/.n8n-files for Read/Write Files paths
+- inspect docs/bridge-ledger-scaffold.md and botfucker/bridge_ledger.py
+- confirm the ledger stores durable audit_id/status data only and has no provider calls or credential fields
 
-Then review Phase 12 only: Real n8n Import/Dry-Run Validation.
+Then review Phase 14 only: Durable Bridge Ledger Scaffold.
 
-Check that both workflows imported into n8n-vps as inactive/manual, approved-action bridge executed sample-only dry-run, final output was provider_execution:not_performed, and cleanup removed validation rows/temp files.
+Check that claim_action records pending state before provider mutation, duplicate audit_id claims fail closed, unsafe approved-action exports are rejected, and no OAuth/provider credentials/live provider mutation nodes were added.
 
 Do not add real OAuth. Do not add provider credentials. Do not attach Gmail/Microsoft/IMAP/SMTP mutation credentials. Do not enable live n8n provider actions. Preserve the provider boundary: live provider execution remains separately reviewed and guarded.
 ```
@@ -303,9 +306,9 @@ Do not add real OAuth. Do not add provider credentials. Do not attach Gmail/Micr
 ## Team Plan
 
 - **Amy**: orchestration and scope control. She keeps the product from wandering into OAuth swamp country before bridge promotion is reviewed.
-- **Chip**: owns reviewed action bridge promotion docs/tests if Phase 12 review passes.
+- **Chip**: owns durable bridge ledger scaffold and bridge promotion safety docs/tests.
 - **Rex**: security veto on processed-audit dedupe, credential absence, live-action safety gates, provider-boundary isolation, and XSS regressions.
-- **Gus**: n8n operator verification, dry-run bridge observability, cleanup steps, CI, and operator docs.
+- **Gus**: n8n operator verification, dry-run bridge observability, cleanup steps, CI, ledger operability, and operator docs.
 - **Fred**: provider sandbox/action-limit research only; no direct OAuth implementation yet.
 
 ## Known Follow-Up Issues
@@ -315,13 +318,14 @@ Do not add real OAuth. Do not add provider credentials. Do not attach Gmail/Micr
 - No production OAuth yet.
 - Real n8n import validation passed on n8n-vps with sample-only dry-run and cleanup; do not activate those workflows without a separate reviewed bridge-promotion plan.
 - n8n approved action bridge is dry-run only; live provider actions still need a separate explicit reviewed workflow.
+- Phase 14 durable bridge ledger scaffold exists for processed-`audit_id` dedupe, but it is not connected to live provider mutation.
 - YOLO guardrails exist but live provider actions still require explicit operator configuration and must not be casually enabled.
 
 ## Tomorrow Restart
 
-- PR #13 is open and CI green: `https://github.com/Jdelg718/BotFucker/pull/13`.
-- First move tomorrow: re-check PR #13, merge if green, pull `main`, branch Phase 13.
-- Phase 13 target: **Reviewed Action Bridge Promotion Plan**.
+- Phase 14 branch is local: `phase-14-durable-bridge-ledger`.
+- First move next: re-check tests, review diff, and open/squash Phase 14 if green.
+- Phase 15 target should be emergency-stop proof or sandbox-only bridge rehearsal using the durable ledger.
 - Do **not** add OAuth, provider credentials, or live n8n provider mutation nodes.
 - Keep live provider execution separate, reviewed, audited, deduped by processed `audit_id`, rollback-ready, and security/ops-reviewed.
 
