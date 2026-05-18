@@ -41,6 +41,7 @@ See [DESIGN.md](DESIGN.md) for the proposed architecture and roadmap.
 - Provides an inactive n8n approved-action bridge starter that validates/dedupes actions in dry-run mode.
 - Provides a Phase 14 durable bridge ledger scaffold for recording processed `audit_id` state before provider mutation.
 - Provides a Phase 15 dry-run bridge rehearsal that proves emergency stop and duplicate-skip behavior before provider mutation.
+- Documents the selected Phase 16 sandbox target: Microsoft Outlook warning-draft creation only, with no send-reply mutation.
 - Keeps provider credentials and live mailbox side effects outside the local UI and review queue.
 
 ## Safety First

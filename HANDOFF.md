@@ -4,9 +4,9 @@
 
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
-- Latest merged milestone: Phase 14 Durable Bridge Ledger Scaffold (`feat: add durable bridge ledger scaffold`, main at 8904d67)
-- Current working branch: `phase-15-emergency-stop-bridge-rehearsal`
-- Current PR target: Phase 15 Emergency-Stop Bridge Rehearsal — code/docs/tests only, dry-run-only, no OAuth/live provider mutation
+- Latest merged milestone: Phase 15 Emergency-Stop Bridge Rehearsal (`feat: add emergency-stop bridge rehearsal`, main at 3b1075e)
+- Current working branch: `phase-16-outlook-warning-draft-sandbox-contract`
+- Current PR target: Phase 16 Microsoft Outlook Warning-Draft Sandbox Contract — docs/tests only, no OAuth/live provider mutation/no send
 - Selected next provider/action target: Microsoft Outlook warning draft in sandbox/manual reviewed bridge contract; no send-reply mutation yet
 - Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, real n8n import validation results, the Phase 13 Reviewed Action Bridge Promotion Plan, durable bridge ledger dedupe scaffold, and emergency-stop bridge rehearsal
 - Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
@@ -38,6 +38,7 @@ docs/provider-auth-plan.md    # provider auth/action boundary plan
 docs/reviewed-action-bridge-promotion-plan.md # Phase 13 reviewed live-bridge gate; no OAuth/live mutation
 docs/bridge-ledger-scaffold.md # Phase 14 durable processed-audit ledger scaffold; no OAuth/live mutation
 docs/bridge-rehearsal.md       # Phase 15 emergency-stop/dry-run bridge rehearsal; no provider execution
+docs/microsoft-outlook-warning-draft-sandbox.md # Phase 16 Outlook warning-draft sandbox contract; no send
 README.md                     # user-facing setup and project overview
 outreach_filter.py            # compatibility CLI wrapper
 botfucker/models.py           # normalized email/classification/review models
