@@ -477,6 +477,16 @@ Compatibility fixes shipped:
 - file paths use `/home/node/.n8n-files`, because n8n 2.18.5 blocks arbitrary local file paths
 - approved-action bridge parses `readWriteFile` binary JSON via `getBinaryDataBuffer`
 
+## Phase 13 Reviewed Action Bridge Promotion Plan
+
+Phase 13 adds the reviewed path for promoting one approved provider action type from dry-run evidence toward a separately reviewed live n8n bridge. It is documentation and tests only: no OAuth, no provider credentials in BotFucker core, no live Gmail/Microsoft/IMAP/SMTP mutation nodes, and no change to local UI/provider behavior.
+
+Artifact:
+
+- [`docs/reviewed-action-bridge-promotion-plan.md`](docs/reviewed-action-bridge-promotion-plan.md) — operator/security/ops gate for one-action-at-a-time live bridge review.
+
+The plan requires persistent processed-`audit_id` state, rollback and emergency-stop procedures, provider-specific sandbox/manual tests, and Rex/Gus review before any live mutation node is connected.
+
 ## Test Before Going Live
 
 Compile-check the script and package:

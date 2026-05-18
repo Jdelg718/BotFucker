@@ -89,13 +89,19 @@ There are intentionally no Gmail, Microsoft, IMAP, SMTP, send-mail, move-mail, d
 
 ## Future live bridge rules
 
-When this graduates from dry-run to live provider execution:
+When this graduates from dry-run to live provider execution, follow the Phase 13 promotion plan in [`docs/reviewed-action-bridge-promotion-plan.md`](reviewed-action-bridge-promotion-plan.md). Phase 13 is a plan and review gate only: no OAuth, no provider credentials in BotFucker core, and no live provider mutation nodes in the checked-in starter workflows.
 
-- keep the live workflow separate from the import workflow
+Minimum rules:
+
+- keep the live workflow separate from the import workflow and this dry-run starter
+- promote only one reviewed provider/action pair at a time
 - require explicit enablement
 - retain dry-run mode
-- persist processed `audit_id` values durably
+- persist processed `audit_id` values durably before provider mutation
 - log each attempted provider action and result
-- prefer archive/quarantine over delete
+- document rollback and emergency-stop behavior
+- require provider-specific sandbox/manual tests
+- require security and ops review before any live provider action node is connected
+- prefer archive/quarantine over delete; permanent deletion is out of scope for the first promotion review
 - never execute unapproved, dismissed, whitelist, or blacklist events unless those action types get their own reviewed export contract
 - never expose provider tokens or private headers to BotFucker core or the browser UI
