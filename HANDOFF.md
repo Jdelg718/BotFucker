@@ -4,11 +4,11 @@
 
 - GitHub: `https://github.com/Jdelg718/BotFucker`
 - Default branch: `main`
-- Latest merged milestone: Phase 15 Emergency-Stop Bridge Rehearsal (`feat: add emergency-stop bridge rehearsal`, main at 3b1075e)
-- Current working branch: `phase-16-outlook-warning-draft-sandbox-contract`
-- Current PR target: Phase 16 Microsoft Outlook Warning-Draft Sandbox Contract — docs/tests only, no OAuth/live provider mutation/no send
-- Selected next provider/action target: Microsoft Outlook warning draft in sandbox/manual reviewed bridge contract; no send-reply mutation yet
-- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, real n8n import validation results, the Phase 13 Reviewed Action Bridge Promotion Plan, durable bridge ledger dedupe scaffold, and emergency-stop bridge rehearsal
+- Latest merged milestone: Phase 16 Microsoft Outlook Warning-Draft Sandbox Contract (`0377242`)
+- Current working branch: `phase-17-inactive-outlook-warning-draft-workflow-scaffold`
+- Current PR target: Phase 17 Inactive Outlook Warning-Draft Workflow Scaffold — docs/tests/workflow scaffold only, no credentials/no activation/no mail delivery
+- Selected next provider/action target: sandbox import/rehearsal or operator validation of the inactive Microsoft Outlook warning-draft scaffold; no live send/OAuth
+- Current local demo target: demonstrate deterministic local review, optional mocked LLM classifier fallback/validation, approved-action export, dry-run n8n bridge contract, fail-closed YOLO policy checks, real n8n import validation results, durable bridge ledger dedupe scaffold, emergency-stop bridge rehearsal, and inactive/manual Outlook warning-draft scaffold
 - Current promo artifact: `promo/botfucker-animated-explainer/renders/botfucker-animated-explainer_narrated-final.mp4`
 
 ## What BotFucker Is
@@ -27,7 +27,7 @@ Important files:
 
 ```text
 DESIGN.md                     # v2 architecture and principles
-ROADMAP.md                    # phased product roadmap, current through Phase 15 emergency-stop bridge rehearsal
+ROADMAP.md                    # phased product roadmap, current through Phase 17 inactive Outlook warning-draft scaffold
 docs/n8n-import-validation.md # Phase 12 real n8n import/dry-run procedure and results
 docs/webhook-contract.md      # normalized n8n/webhook JSON contract
 docs/n8n-workflow.json        # importable n8n import starter workflow
@@ -39,6 +39,8 @@ docs/reviewed-action-bridge-promotion-plan.md # Phase 13 reviewed live-bridge ga
 docs/bridge-ledger-scaffold.md # Phase 14 durable processed-audit ledger scaffold; no OAuth/live mutation
 docs/bridge-rehearsal.md       # Phase 15 emergency-stop/dry-run bridge rehearsal; no provider execution
 docs/microsoft-outlook-warning-draft-sandbox.md # Phase 16 Outlook warning-draft sandbox contract; no send
+docs/n8n-outlook-warning-draft-scaffold.json # Phase 17 inactive/manual Outlook warning-draft n8n scaffold
+docs/n8n-outlook-warning-draft-scaffold.md   # Phase 17 operator guide: emergency stop, dedupe, rollback/manual deletion
 README.md                     # user-facing setup and project overview
 outreach_filter.py            # compatibility CLI wrapper
 botfucker/models.py           # normalized email/classification/review models
@@ -72,6 +74,7 @@ These are non-negotiable:
 - Provider-side actions are future bridge work, not local UI behavior.
 - The Phase 14 durable bridge ledger records `audit_id` state only (`bridge_ledger_state_only`) before provider mutation; it is not a provider action engine.
 - The Phase 15 bridge rehearsal is dry-run-only; emergency stop exits before ledger claim, and provider execution remains `not_performed`.
+- The Phase 17 Outlook warning-draft workflow is inactive/manual; its Graph `createReply` placeholder is disabled and unconnected, with no auth material in the export.
 
 ## Current Test Commands
 
@@ -273,45 +276,63 @@ python3 -m py_compile outreach_filter.py botfucker/*.py scripts/validate_n8n_wor
 python3 -m unittest discover -s tests -v
 ```
 
+### Phase 13 — Reviewed Action Bridge Promotion Plan
+
+Delivered operator/security/ops promotion gates for one provider action at a time, with credential ownership in n8n only, rollback/emergency-stop requirements, sandbox/manual test expectations, and no live mutation.
+
+### Phase 14 — Durable Bridge Ledger Scaffold
+
+Delivered `botfucker.bridge_ledger.DurableBridgeLedger`, durable `audit_id` dedupe state, status transitions, docs, and tests proving IDs/status only with no provider calls or secret columns.
+
+### Phase 15 — Emergency-Stop Bridge Rehearsal
+
+Delivered `botfucker.bridge_rehearsal.rehearse_approved_actions()`, default-on emergency stop, duplicate skip behavior, dry-run logging only, docs, and tests proving provider execution remains `not_performed`.
+
+### Phase 16 — Microsoft Outlook Warning-Draft Sandbox Contract
+
+Delivered `docs/microsoft-outlook-warning-draft-sandbox.md`, selecting Microsoft Outlook/Graph `createReply` as the warning-draft-only target, documenting `Mail.ReadWrite` as a permission note, and forbidding live delivery or other mailbox mutations.
+
+### Phase 17 — Inactive Outlook Warning-Draft Workflow Scaffold
+
+Delivered inactive/manual `docs/n8n-outlook-warning-draft-scaffold.json`, operator guide `docs/n8n-outlook-warning-draft-scaffold.md`, emergency-stop/dedupe scaffold, disabled/unconnected Graph `createReply` placeholder, validator coverage, and tests proving no credentials, no activation, no connected provider action, and no forbidden mailbox mutation strings in the workflow export.
+
 ## Next PR Recommendation
 
-After Phase 14, keep OAuth on hold. The next safe step is emergency-stop proof or a sandbox-only bridge rehearsal that uses the durable bridge ledger and still performs no production provider mutation.
+After Phase 17, keep OAuth on hold. The next safe step is sandbox import/rehearsal or operator validation of the inactive Outlook warning-draft scaffold, still without production provider mutation.
 
-Do **not** add real OAuth, provider credentials, or live n8n provider mutation nodes until the Phase 13 gate has Rex/Gus review and provider-specific sandbox evidence.
+Do **not** add real OAuth, provider credentials, or live n8n provider delivery nodes. Keep Rex/Gus review and sandbox evidence ahead of any connected provider action.
 
 Suggested follow-up scope:
 
-1. Review Phase 14 ledger scaffold with Rex/Gus.
-2. Keep the first provider/action pair to `approve_warning` only.
-3. Use processed-`audit_id` state before any provider mutation attempt.
-4. Keep credentials in n8n only.
-5. Require rollback and emergency-stop proof before any live provider action node is connected.
+1. Import `docs/n8n-outlook-warning-draft-scaffold.json` into sandbox n8n as inactive.
+2. Run the manual path with emergency stop on and fake input only.
+3. Confirm the disabled Graph `createReply` placeholder remains unconnected unless Rex/Gus approve a sandbox-only rehearsal.
+4. Document import behavior, cleanup, rollback, and manual draft deletion notes.
+5. Keep credentials in n8n/operator infrastructure only.
 
 ## Suggested Prompt for Kodex/Codex
 
 ```text
 You are working on BotFucker, an AI-era inbox defense app.
 
-Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, docs/webhook-contract.md, docs/n8n-workflow.md, docs/n8n-approved-action-bridge.md, docs/n8n-import-validation.md, docs/provider-auth-plan.md, docs/reviewed-action-bridge-promotion-plan.md, and docs/bridge-ledger-scaffold.md.
+Read DESIGN.md, ROADMAP.md, HANDOFF.md, README.md, docs/webhook-contract.md, docs/n8n-workflow.md, docs/n8n-approved-action-bridge.md, docs/n8n-import-validation.md, docs/provider-auth-plan.md, docs/reviewed-action-bridge-promotion-plan.md, docs/bridge-ledger-scaffold.md, docs/bridge-rehearsal.md, docs/microsoft-outlook-warning-draft-sandbox.md, and docs/n8n-outlook-warning-draft-scaffold.md.
 
-First, verify the current Phase 14 branch without changing behavior:
+First, verify the current Phase 17 branch without changing behavior:
 - run python3 scripts/validate_n8n_workflow_exports.py
 - run python3 -m py_compile outreach_filter.py botfucker/*.py scripts/validate_n8n_workflow_exports.py
 - run python3 -m unittest discover -s tests -v
-- inspect docs/bridge-ledger-scaffold.md and botfucker/bridge_ledger.py
-- confirm the ledger stores durable audit_id/status data only and has no provider calls or credential fields
+- inspect docs/n8n-outlook-warning-draft-scaffold.json and docs/n8n-outlook-warning-draft-scaffold.md
+- confirm the workflow is inactive/manual, has no credentials, and keeps the Graph createReply placeholder disabled and unconnected
 
-Then review Phase 14 only: Durable Bridge Ledger Scaffold.
+Then review Phase 17 only: Inactive Outlook Warning-Draft Workflow Scaffold.
 
-Check that claim_action records pending state before provider mutation, duplicate audit_id claims fail closed, unsafe approved-action exports are rejected, and no OAuth/provider credentials/live provider mutation nodes were added.
-
-Do not add real OAuth. Do not add provider credentials. Do not attach Gmail/Microsoft/IMAP/SMTP mutation credentials. Do not enable live n8n provider actions. Preserve the provider boundary: live provider execution remains separately reviewed and guarded.
+Do not add real OAuth. Do not add provider credentials. Do not activate n8n. Do not connect live Microsoft provider delivery. Preserve the provider boundary: the next step is sandbox import/rehearsal or operator validation, not live send/OAuth.
 ```
 
 ## Team Plan
 
 - **Amy**: orchestration and scope control. She keeps the product from wandering into OAuth swamp country before bridge promotion is reviewed.
-- **Chip**: owns durable bridge ledger scaffold and bridge promotion safety docs/tests.
+- **Chip**: owns bridge promotion docs/tests, inactive/manual Outlook draft scaffolding, and dry-run-to-sandbox safety reviews.
 - **Rex**: security veto on processed-audit dedupe, credential absence, live-action safety gates, provider-boundary isolation, and XSS regressions.
 - **Gus**: n8n operator verification, dry-run bridge observability, cleanup steps, CI, ledger operability, and operator docs.
 - **Fred**: provider sandbox/action-limit research only; no direct OAuth implementation yet.
@@ -323,15 +344,15 @@ Do not add real OAuth. Do not add provider credentials. Do not attach Gmail/Micr
 - No production OAuth yet.
 - Real n8n import validation passed on n8n-vps with sample-only dry-run and cleanup; do not activate those workflows without a separate reviewed bridge-promotion plan.
 - n8n approved action bridge is dry-run only; live provider actions still need a separate explicit reviewed workflow.
-- Phase 14 durable bridge ledger scaffold exists for processed-`audit_id` dedupe, but it is not connected to live provider mutation.
+- Phase 17 Outlook warning-draft scaffold is inactive/manual only; Graph `createReply` is disabled and unconnected until sandbox import/rehearsal or operator validation.
 - YOLO guardrails exist but live provider actions still require explicit operator configuration and must not be casually enabled.
 
 ## Tomorrow Restart
 
-- Phase 14 branch is local: `phase-14-durable-bridge-ledger`.
-- First move next: re-check tests, review diff, and open/squash Phase 14 if green.
-- Phase 15 target should be emergency-stop proof or sandbox-only bridge rehearsal using the durable ledger.
-- Do **not** add OAuth, provider credentials, or live n8n provider mutation nodes.
+- Phase 17 branch is local: `phase-17-inactive-outlook-warning-draft-workflow-scaffold`.
+- First move next: re-check tests, review diff, and open/squash Phase 17 if green.
+- Phase 18 target should be sandbox import/rehearsal or operator validation of the inactive Outlook warning-draft scaffold.
+- Do **not** add OAuth, provider credentials, activate n8n, or connect live provider delivery.
 - Keep live provider execution separate, reviewed, audited, deduped by processed `audit_id`, rollback-ready, and security/ops-reviewed.
 
 ## Product Voice

@@ -42,6 +42,7 @@ See [DESIGN.md](DESIGN.md) for the proposed architecture and roadmap.
 - Provides a Phase 14 durable bridge ledger scaffold for recording processed `audit_id` state before provider mutation.
 - Provides a Phase 15 dry-run bridge rehearsal that proves emergency stop and duplicate-skip behavior before provider mutation.
 - Documents the selected Phase 16 sandbox target: Microsoft Outlook warning-draft creation only, with no send-reply mutation.
+- Provides a Phase 17 inactive/manual n8n Outlook warning-draft scaffold with a disabled, unconnected Graph `createReply` placeholder.
 - Keeps provider credentials and live mailbox side effects outside the local UI and review queue.
 
 ## Safety First
@@ -508,6 +509,17 @@ Safety constraints:
 - stores IDs/status only, not subject, snippet, body, headers, OAuth tokens, API keys, passwords, cookies, or private provider headers
 - no OAuth, no provider credentials, and no live provider mutation nodes are added
 - checked-in n8n workflows remain inactive/dry-run starters
+
+## Phase 17 Inactive Outlook Warning-Draft Workflow Scaffold
+
+Phase 17 adds an inactive/manual n8n scaffold for the selected Microsoft Outlook `approve_warning` draft path. It is still a scaffold: no OAuth setup, no checked-in auth material, no activation, and no mail delivery.
+
+Artifacts:
+
+- [`docs/n8n-outlook-warning-draft-scaffold.json`](docs/n8n-outlook-warning-draft-scaffold.json) — inactive n8n workflow with manual trigger, fake approved-action input, emergency-stop/dedupe validation, a draft-only summary node, and a disabled/unconnected Graph `createReply` placeholder.
+- [`docs/n8n-outlook-warning-draft-scaffold.md`](docs/n8n-outlook-warning-draft-scaffold.md) — operator checklist covering emergency stop, dedupe, rollback, and manual draft deletion.
+
+Next step: sandbox import/rehearsal or operator validation of this scaffold. Do not jump from this artifact to live delivery or broad OAuth work.
 
 ## Test Before Going Live
 
